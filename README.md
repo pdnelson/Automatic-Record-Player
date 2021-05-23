@@ -15,9 +15,9 @@ More details to come. I'm still in the process of planning out this design; this
   - 5: Horizontal stepper motor pin 2
   - 6: Horizontal stepper motor pin 3
   - 7: Horizontal stepper motor pin 4
-  - 8: Play button
-  - 9: Pause button
-  - 10: On - Auto/Manual
+  - 8: Home button
+  - 9: Play button
+  - 10: Pause button
   - 11: Paused status LED
   - 12: Homing status LED
   - 13: Play status LED
@@ -28,7 +28,7 @@ More details to come. I'm still in the process of planning out this design; this
   - A2: Horizontal home limit switch
   - A3: Horizontal "play" optical sensor (technically could be removed in favor of step count)
   - A4: Horizontal "pick up" optical sensor
-  - A5: Home button
+  - A5: On - Auto/Manual
 
 Note: Due to limitations, I had to use some of the analog lines for digital values.
 
