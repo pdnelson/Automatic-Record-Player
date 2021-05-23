@@ -32,4 +32,4 @@
 *.app
 
 # vscode folders
-.vscode/
+arduino.json
