@@ -17,10 +17,10 @@ More details to come. I'm still in the process of planning out this design; this
   - 7: Horizontal stepper motor pin 4
   - 8: Play button
   - 9: Pause button
-  - 10: On - Auto
-  - 11: On - Manual
-  - 12: Paused status LED
-  - 13: Automatic movement status LED (I wanted this to be separate between play/home, but I ran out of pins)
+  - 10: On - Auto/Manual
+  - 11: Paused status LED
+  - 12: Homing status LED
+  - 13: Play status LED
 
 - Analog
   - A0: Vertical stepper upper limit
