@@ -12,8 +12,8 @@ const int stepsPerRevolution = 2048;
 #define STEPPER_VERTICAL_PIN4 5
 Stepper VerticalTonearmMotor = Stepper(stepsPerRevolution, STEPPER_VERTICAL_PIN1, STEPPER_VERTICAL_PIN3, STEPPER_VERTICAL_PIN2, STEPPER_VERTICAL_PIN4);
 
-// The horizontal stepper motor controls the left and right movements of the tonearm, such as positioning it at any
-// horizontal axis so the vertical movement can place the tonearm rests at the correct location
+// The horizontal stepper motor controls the left and right movements of the tonearm, such as positioning it at a
+// horizontal axis so the vertical movement can place the tonearm at the correct location
 #define STEPPER_HORIZONTAL_PIN1 10
 #define STEPPER_HORIZONTAL_PIN2 11
 #define STEPPER_HORIZONTAL_PIN3 12
@@ -98,7 +98,7 @@ void loop() {
 // This handles homing the tonearm, which must be done every time the application is started
 void homeBothAxes() {
 
-  // Now that we are homed, the step count can be reset to 0 for each axis
+  // Now that both axes have been homed, the step count can be reset to 0 for each axis
   verticalStepCount = 0;
   horizontalStepCount = 0;
 }
