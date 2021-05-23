@@ -32,7 +32,7 @@ int8_t stepPosition = 0;
 
 // This is the move delay, in ms, between motor steps. The motors used in this project are 28BYJ-48 stepper motors,
 // which offer a minimum delay of 2ms between steps. Additional ms were added for precision, at the cost of speed.
-int movementRPM = 9;
+int movementRPM = 8;
 
 void setup() {
   pinMode(STEPPER_1_PIN1, OUTPUT);
