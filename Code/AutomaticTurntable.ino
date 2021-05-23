@@ -12,10 +12,10 @@ const int stepsPerRevolution = 2048;
 Stepper motor1 = Stepper(stepsPerRevolution, STEPPER_1_PIN1, STEPPER_1_PIN3, STEPPER_1_PIN2, STEPPER_1_PIN4);
 
 // Second stepper motor
-#define STEPPER_2_PIN1 13
-#define STEPPER_2_PIN2 12
-#define STEPPER_2_PIN3 11
-#define STEPPER_2_PIN4 10
+#define STEPPER_2_PIN1 10
+#define STEPPER_2_PIN2 11
+#define STEPPER_2_PIN3 12
+#define STEPPER_2_PIN4 13
 Stepper motor2 = Stepper(stepsPerRevolution, STEPPER_2_PIN1, STEPPER_2_PIN3, STEPPER_2_PIN2, STEPPER_2_PIN4);
 
 // Left/right buttons for clockwise/counterclockwise test movements. These exist for troubleshooting/testing purposes only.
