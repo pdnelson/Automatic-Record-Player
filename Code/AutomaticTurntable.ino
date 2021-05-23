@@ -4,19 +4,21 @@
 
 const int stepsPerRevolution = 2048;
 
-// First stepper motor
-#define STEPPER_1_PIN1 2
-#define STEPPER_1_PIN2 3
-#define STEPPER_1_PIN3 4
-#define STEPPER_1_PIN4 5
-Stepper motor1 = Stepper(stepsPerRevolution, STEPPER_1_PIN1, STEPPER_1_PIN3, STEPPER_1_PIN2, STEPPER_1_PIN4);
+// The vertical stepper motor controls the up and down movements of the tonearm, such as lifting the stylus off of the 
+// record or setting it down
+#define STEPPER_VERTICAL_PIN1 2
+#define STEPPER_VERTICAL_PIN2 3
+#define STEPPER_VERTICAL_PIN3 4
+#define STEPPER_VERTICAL_PIN4 5
+Stepper VerticalTonearmMotor = Stepper(stepsPerRevolution, STEPPER_VERTICAL_PIN1, STEPPER_VERTICAL_PIN3, STEPPER_VERTICAL_PIN2, STEPPER_VERTICAL_PIN4);
 
-// Second stepper motor
-#define STEPPER_2_PIN1 10
-#define STEPPER_2_PIN2 11
-#define STEPPER_2_PIN3 12
-#define STEPPER_2_PIN4 13
-Stepper motor2 = Stepper(stepsPerRevolution, STEPPER_2_PIN1, STEPPER_2_PIN3, STEPPER_2_PIN2, STEPPER_2_PIN4);
+// The horizontal stepper motor controls the left and right movements of the tonearm, such as positioning it at any
+// horizontal axis so the vertical movement can place the tonearm rests at the correct location
+#define STEPPER_HORIZONTAL_PIN1 10
+#define STEPPER_HORIZONTAL_PIN2 11
+#define STEPPER_HORIZONTAL_PIN3 12
+#define STEPPER_HORIZONTAL_PIN4 13
+Stepper HorizontalTonearmMotor = Stepper(stepsPerRevolution, STEPPER_HORIZONTAL_PIN1, STEPPER_HORIZONTAL_PIN3, STEPPER_HORIZONTAL_PIN2, STEPPER_HORIZONTAL_PIN4);
 
 // Left/right buttons for clockwise/counterclockwise test movements. These exist for troubleshooting/testing purposes only.
 #define LEFT_BUTTON 6
@@ -27,25 +29,25 @@ Stepper motor2 = Stepper(stepsPerRevolution, STEPPER_2_PIN1, STEPPER_2_PIN3, STE
 #define MOV_LED_R 9
 
 // This is an internal step count for the motors, so we know how many steps it has taken
-int32_t totalStepCount = 0;
-int8_t stepPosition = 0;
+int32_t verticalStepCount = 0;
+int32_t horizontalStepCount = 0;
 
-// This is the move delay, in ms, between motor steps. The motors used in this project are 28BYJ-48 stepper motors,
-// which offer a minimum delay of 2ms between steps. Additional ms were added for precision, at the cost of speed.
+// The motors used in this project are 28BYJ-48 stepper motors, which I've found to cap at 11 RPM 
+// before becoming too unreliable. 8 or 9 I've found to be a good balance for speed and reliability at 5v DC
 int movementRPM = 8;
 
 void setup() {
-  pinMode(STEPPER_1_PIN1, OUTPUT);
-  pinMode(STEPPER_1_PIN2, OUTPUT);
-  pinMode(STEPPER_1_PIN3, OUTPUT);
-  pinMode(STEPPER_1_PIN4, OUTPUT);
-  motor1.setSpeed(movementRPM);
+  pinMode(STEPPER_VERTICAL_PIN1, OUTPUT);
+  pinMode(STEPPER_VERTICAL_PIN2, OUTPUT);
+  pinMode(STEPPER_VERTICAL_PIN3, OUTPUT);
+  pinMode(STEPPER_VERTICAL_PIN4, OUTPUT);
+  VerticalTonearmMotor.setSpeed(movementRPM);
   
-  pinMode(STEPPER_2_PIN1, OUTPUT);
-  pinMode(STEPPER_2_PIN2, OUTPUT);
-  pinMode(STEPPER_2_PIN3, OUTPUT);
-  pinMode(STEPPER_2_PIN4, OUTPUT);
-  motor2.setSpeed(movementRPM);
+  pinMode(STEPPER_HORIZONTAL_PIN1, OUTPUT);
+  pinMode(STEPPER_HORIZONTAL_PIN2, OUTPUT);
+  pinMode(STEPPER_HORIZONTAL_PIN3, OUTPUT);
+  pinMode(STEPPER_HORIZONTAL_PIN4, OUTPUT);
+  HorizontalTonearmMotor.setSpeed(movementRPM);
   
   pinMode(LEFT_BUTTON, INPUT);
   pinMode(RIGHT_BUTTON, INPUT);
@@ -54,26 +56,36 @@ void setup() {
   pinMode(MOV_LED_R, OUTPUT);
 
   Serial.begin(SERIAL_SPEED);
+
+  homeBothAxes();
 }
 
 void loop() {
-  int leftButtonStatus = digitalRead(LEFT_BUTTON);
-  int rightButtonStatus = digitalRead(RIGHT_BUTTON);
+  bool leftButtonStatus = digitalRead(LEFT_BUTTON);
+  bool rightButtonStatus = digitalRead(RIGHT_BUTTON);
 
   // If the left button is pressed, move clockwise and light the left LED
   if(leftButtonStatus && !rightButtonStatus) {
     digitalWrite(MOV_LED_L, HIGH);
     digitalWrite(MOV_LED_R, LOW);
-    motor1.step(1);
-    motor2.step(1);
+
+    VerticalTonearmMotor.step(1);
+    verticalStepCount++;
+
+    HorizontalTonearmMotor.step(1);
+    horizontalStepCount++;
   }
 
   // If the right button is pressed, move counterclockwise and light the right LED
   else if (!leftButtonStatus && rightButtonStatus) {
     digitalWrite(MOV_LED_L, LOW);
     digitalWrite(MOV_LED_R, HIGH);
-    motor1.step(-1);
-    motor2.step(-1);
+
+    VerticalTonearmMotor.step(-1);
+    verticalStepCount--;
+
+    HorizontalTonearmMotor.step(-1);
+    horizontalStepCount--;
   }
   
   // No movement, so shut the LEDs off
@@ -81,4 +93,12 @@ void loop() {
     digitalWrite(MOV_LED_L, LOW);
     digitalWrite(MOV_LED_R, LOW);
   }
+}
+
+// This handles homing the tonearm, which must be done every time the application is started
+void homeBothAxes() {
+
+  // Now that we are homed, the step count can be reset to 0 for each axis
+  verticalStepCount = 0;
+  horizontalStepCount = 0;
 }
