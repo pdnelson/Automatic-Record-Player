@@ -1,7 +1,5 @@
 #include <Stepper.h>
 
-#define SERIAL_SPEED 115200
-
 const int stepsPerRevolution = 2048;
 
 // The vertical stepper motor controls the up and down movements of the tonearm, such as lifting the stylus off of the 
@@ -33,7 +31,7 @@ Stepper HorizontalTonearmMotor = Stepper(stepsPerRevolution, STEPPER_HORIZONTAL_
 // Positioning sensors for the vertical tonearm movement. The lower limit switch designates "home" for the tonearm's vertical position
 // The upper sensor is the "pause" position, and will allow the tonearm to go higher to engage with the gearing that moves horizontally
 #define VERTICAL_UPPER_SENSOR A0
-#define VERTICAL_LOWER_LIMIT A1
+#define VERTICAL_HOME_LIMIT A1
 
 // Positioning sensors for the horizontal tonearm movement. Each one represents a different point that the horizontal tonearm could be in,
 // and will allow the various funcrtions to move it in the correct direction depending on where it currently is.
@@ -44,7 +42,7 @@ Stepper HorizontalTonearmMotor = Stepper(stepsPerRevolution, STEPPER_HORIZONTAL_
 // This tells us whether the user flipped the 3-way switch to "automatic" or "manual"
 // Automatic will automatically home the turntable at the end of the record, while manual
 // will not. Even with manual selected, the "home," "pause" and "play" buttons will still work
-#define AUTO_OR_MANUAL A5 // Auto = low; manual = high
+#define AUTO_OR_MANUAL_SWITCH A5 // Auto = high; manual = low
 
 // This is an internal step count for the motors, so we know how many steps it has taken
 int32_t verticalStepCount = 0;
@@ -75,17 +73,14 @@ void setup() {
   pinMode(PLAY_STATUS_LED, OUTPUT);
   pinMode(PAUSE_STATUS_LED, OUTPUT);
 
-  //Serial.begin(SERIAL_SPEED);
+  bool autoModeSelected = digitalRead(AUTO_OR_MANUAL_SWITCH);
 
-  // This will need significantly changed in the future once the power-on routine is fully fleshed out
-  bool verticalUpperIsPausedOrEngaged = digitalRead(VERTICAL_UPPER_SENSOR);
-
-  // If the tonearm is currently lifted up to a "paused" or "moving" state, then we want to home it
-  if(verticalUpperIsPausedOrEngaged) {
-    homeBothAxes();
+  // If the turntable is turned on to "automatic," then home the whole tonearm
+  if(autoModeSelected) {
+    homeTonearm();
   }
 
-  // Otherwise, we only want to home the vertical axis, because the stylus may already be on a record
+  // Otherwise, we only want to home the vertical axis, which will drop the tonearm in its current location
   else {
     homeVerticalAxis();
   }
@@ -106,17 +101,27 @@ void loop() {
   }
 }
 
-// This is only used when first powering on to verify the tonearm is not being moved
-// If it is found that the pause sensor is not tripped, then it will know that the tonearm
-// was previously lifted, and should be homed instead
+// This is only used when first powering on in manual mode to verify that the tonearm
+// drops down in place, if it was previously shut off between the sensor and home switch
+// The home status LED will light for the duration of this command
 void homeVerticalAxis() {
-    // TODO: Implement
+  
+    // If the vertical home limit is already high, then no need to move
+    bool lowerLimitHomed = digitalRead(VERTICAL_HOME_LIMIT);
+
+    // Otherwise, the tonearm needs moved down
+    if(!lowerLimitHomed) {
+      digitalWrite(HOME_STATUS_LED, HIGH);
+      // TODO: Implement
+    }
 
     // Now that the vertical axis has been homed, the step count can be reset to 0
     verticalStepCount = 0;
+
+    digitalWrite(HOME_STATUS_LED, LOW);
 }
 
-void homeBothAxes() {
+void homeTonearm() {
   //TODO: Implement
 
   // Now that the axes have been homed, their step counts can be reset to 0
