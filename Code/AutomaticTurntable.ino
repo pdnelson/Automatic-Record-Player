@@ -44,7 +44,7 @@ Stepper HorizontalTonearmMotor = Stepper(stepsPerRevolution, STEPPER_HORIZONTAL_
 // This tells us whether the user flipped the 3-way switch to "automatic" or "manual"
 // Automatic will automatically home the turntable at the end of the record, while manual
 // will not. Even with manual selected, the "home," "pause" and "play" buttons will still work
-#define AUTO_OR_MANUAL A5
+#define AUTO_OR_MANUAL A5 // Auto = low; manual = high
 
 // This is an internal step count for the motors, so we know how many steps it has taken
 int32_t verticalStepCount = 0;
@@ -75,8 +75,9 @@ void setup() {
   pinMode(PLAY_STATUS_LED, OUTPUT);
   pinMode(PAUSE_STATUS_LED, OUTPUT);
 
-  Serial.begin(SERIAL_SPEED);
+  //Serial.begin(SERIAL_SPEED);
 
+  // This will need significantly changed in the future once the power-on routine is fully fleshed out
   bool verticalUpperIsPausedOrEngaged = digitalRead(VERTICAL_UPPER_SENSOR);
 
   // If the tonearm is currently lifted up to a "paused" or "moving" state, then we want to home it
@@ -95,7 +96,7 @@ void loop() {
   // IR SENSOR TEST
   bool sensorStatus = digitalRead(VERTICAL_UPPER_SENSOR);
 
-  // If the left button is pressed, move clockwise and light the left LED
+  // If sensor is not tripped, move the motors
   if(sensorStatus) {
     VerticalTonearmMotor.step(1);
     verticalStepCount++;
