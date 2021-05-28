@@ -36,7 +36,8 @@ Note: Due to limitations, I had to use some of the analog lines for digital valu
 - Arduino Uno
 - 2x 28BYJ-48 stepper motors
 - 2x ULN2003 stepper motor drivers
-- 2x slotted optical sensors
-- 3x limit switches (I got them out of some computer mice...)
+- 4x slotted optical sensors
+- 1x limit switche (I got them out of some computer mice...)
 - 2x 3/16" steel rods, 4" long
 - 4x 3/16" sleeve bearings
+- 1x 12x13mm butt hinge
