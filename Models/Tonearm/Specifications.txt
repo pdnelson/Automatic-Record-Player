@@ -1,2 +1,5 @@
 - Fit 3/16" diameter shaft
+- Fit 12x13mm butt hinge
 - Fit standard cartridge size (measurements needed)
+- Cartridge mount angle: 157.5 degrees
+- Able to mount counterbalance
