@@ -109,7 +109,7 @@ void loop() {
     pauseAndWaitUntilUnpaused();
   }
 
-  if(digitalRead(HOME_BUTTON)) {
+  if(digitalRead(HOME_BUTTON) || digitalRead(HORIZONTAL_PICKUP_SENSOR)) {
     homeTonearm();
   }
 }
@@ -215,6 +215,7 @@ void setErrorState(ErrorCode errorCode) {
   releaseCurrentFromBothMotors();
   digitalWrite(PAUSE_STATUS_LED, LOW);
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
+  digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
 
   switch(errorCode) {
 

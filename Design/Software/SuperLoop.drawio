@@ -19,7 +19,7 @@
                 <mxCell id="16" value="&lt;font color=&quot;#000000&quot;&gt;Play button pressed?&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
                     <mxGeometry x="240" y="200" width="120" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="17" value="&lt;font color=&quot;#000000&quot;&gt;Home button pressed?&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+                <mxCell id="17" value="&lt;font color=&quot;#000000&quot;&gt;Home button pressed or horizontal pickup sensor high?&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
                     <mxGeometry x="170" y="280" width="120" height="40" as="geometry"/>
                 </mxCell>
                 <mxCell id="20" value="" style="endArrow=classic;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.25;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="16" target="17">
