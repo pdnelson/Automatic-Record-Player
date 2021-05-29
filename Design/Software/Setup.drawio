@@ -10,10 +10,10 @@
                 <mxCell id="3" value="&lt;font color=&quot;#000000&quot;&gt;Check auto/manual switch status&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
                     <mxGeometry x="245" y="280" width="190" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="4" value="&lt;font color=&quot;#000000&quot;&gt;Home the tonearm&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+                <mxCell id="4" value="&lt;font color=&quot;#000000&quot;&gt;Home the tonearm&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
                     <mxGeometry x="210" y="400" width="120" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="5" value="&lt;font color=&quot;#000000&quot;&gt;Home the vertical axis&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+                <mxCell id="5" value="&lt;font color=&quot;#000000&quot;&gt;Home the vertical axis&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
                     <mxGeometry x="350" y="400" width="120" height="40" as="geometry"/>
                 </mxCell>
                 <mxCell id="6" value="" style="endArrow=classic;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="3" target="5">
