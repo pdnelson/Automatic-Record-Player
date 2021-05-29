@@ -73,10 +73,8 @@ void setup() {
   pinMode(PLAY_STATUS_LED, OUTPUT);
   pinMode(PAUSE_STATUS_LED, OUTPUT);
 
-  bool autoModeSelected = digitalRead(AUTO_OR_MANUAL_SWITCH);
-
   // If the turntable is turned on to "automatic," then home the whole tonearm
-  if(autoModeSelected) {
+  if(digitalRead(AUTO_OR_MANUAL_SWITCH)) {
     homeTonearm();
   }
 
@@ -107,11 +105,8 @@ void loop() {
 // The home status LED will light for the duration of this command
 void homeVerticalAxis() {
   
-    // If the vertical home limit is already high, then no need to move
-    bool lowerLimitHomed = digitalRead(VERTICAL_HOME_LIMIT);
-
-    // Otherwise, the tonearm needs moved down
-    if(!lowerLimitHomed) {
+    // Home the vertical axis if its home limit is not pressed
+    if(!digitalRead(VERTICAL_HOME_LIMIT)) {
       digitalWrite(HOME_STATUS_LED, HIGH);
       // TODO: Implement
     }
