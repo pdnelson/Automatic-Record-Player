@@ -1,11 +1,34 @@
 # Automatic-Turntable
-This is heavily under construction as I continue to learn about the Arduio Uno and various electronics...
+This is a semi-automatic turntable that plays 7" records! The automatic capabilities will be powered by an Arduino Uno, 2 stepper motors, and a bunch of sensors.
+Some planned features of this turntable include:
+- Stereo RCA outputs for a receiver
+- Able to fit any commercial cartridge
+- 45 and 33-RPM speeds
+- Semi-automatic
+  - Returns tonearm to "home" position automatically after a record is finished
+  - Other buttons that contain other pre-defined routines (play and pause) that the user must initiate
+- Standard PC 3-prong female plug in the back to allow hookup to 120v or 230v households
 
-This will become a turntable that is controlled by stepper motors and sensors.
+The actual "turntable" part is yet to be designed; right now, I'm just working on the automatic functionality.
 
-More details to come. I'm still in the process of planning out this design; this is just here so I can keep track of my code experimentation.
+# Inputs and routines
+The user has a total of four inputs they can use, each triggering their own functions. Most of these functions must be initiated by the user by either pressing a button or flipping a switch, though homing can also be done automatically, which will be explained in more detail later on.
 
-# (Planned) pin usage
+## Automatic/manual switch
+This is a 3-way switch with the center position being "off." Flipping the switch to the "up" position will set the turntable to automatic, while "down" will set it to manual. The turntable will automatically be homed upon flipping the switch to "automatic." Flipping it to "manual" will home the vertical axis, which will set the tonearm down in place where it currently is. The reason for this inclusion is to account for us not knowing what position the tonearm will be in when the device is turned on.
+
+As soon as this switch is flipped to "manual" or "automatic," the software setup procedure begins, which can be seen in Figure 1.
+
+![image](https://user-images.githubusercontent.com/48131480/120053935-06665b80-bffb-11eb-8e6d-85e997d80409.png)
+Figure 1. Flow diagram of the setup procedure
+
+## Play button
+## Pause button
+## Home button
+
+Automatic or manual switch
+
+# Current pin usage
 - Digital
   - 0: Vertical stepper motor pin 1
   - 1: Vertical stepper motor pin 2
@@ -34,6 +57,7 @@ Note: Due to limitations, I had to use some of the analog lines for digital valu
 
 # Parts list (so far)
 - Arduino Uno
+- Mean well RS-15-5 5V 3A power supply
 - 2x 28BYJ-48 stepper motors
 - 2x ULN2003 stepper motor drivers
 - 4x slotted optical sensors
