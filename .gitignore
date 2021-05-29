@@ -33,3 +33,10 @@
 
 # vscode folders
 arduino.json
+
+# sketchup backup files
+*.skb
+
+# image files
+*.png
+*.jpg
