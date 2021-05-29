@@ -12,7 +12,7 @@ Some planned features of this turntable include:
 The actual "turntable" part is yet to be designed; right now, I'm just working on the automatic functionality.
 
 # Inputs and routines
-The user has a total of four inputs they can use, each triggering their own functions. Most of these functions must be initiated by the user by either pressing a button or flipping a switch, though homing can also be done automatically, which will be explained in more detail later on.
+The user has a total of four inputs they can use, each triggering their own functions. Most of these functions must be initiated by the user by either pressing a button or flipping a switch, though homing can also be done automatically, which will be explained in more detail later on. Routine interrupt is currently not planned. This means that while one routine is running, none of the others can be executed for the duration of the currently-running routine.
 
 ## Automatic/manual switch
 This is a 3-way switch with the center position being "off." Flipping the switch to the "up" position will set the turntable to automatic, while "down" will set it to manual. The turntable will automatically be homed upon flipping the switch to "automatic." Flipping it to "manual" will home the vertical axis, which will set the tonearm down in place where it currently is. The reason for this inclusion is to account for us not knowing what position the tonearm will be in when the device is turned on.
@@ -24,10 +24,19 @@ As soon as this switch is flipped to "manual" or "automatic," the software setup
 Figure 1. Flow diagram of the setup procedure
 
 ## Play button
-## Pause button
-## Home button
+The "play" button will pick the tonearm up from any point, and drop it at the beginning of a record. This will work using a slotted optical sensor that denotes the "play" position. If either the pick-up or play sensors are "high," then the tonearm will move left to find the edge of the record, otherwise it will move right.
 
-Automatic or manual switch
+The play routine, defined in the software, can be seen in Figure X.
+
+## Pause button
+The pause button will lift the tonearm up until the pause sensor becomes "low." When the pause button is pressed again, the tonearm will be gently set down on the record.
+
+The pause routine, defined in the software, can be seen in Figure X.
+
+## Home button
+The "home" button will pick the tonearm up from any point, and drop it in its home position. This routine is also automatically called at the end of a record, when the "pick-up" sensor is set "high" and the turntable is set to "automatic."
+
+The home routine, defined in the software, can be seen in Figure X.
 
 # Current pin usage
 - Digital
@@ -47,8 +56,8 @@ Automatic or manual switch
   - 13: Pause status LED
 
 - Analog
-  - A0: Vertical stepper upper limit
-  - A1: Vertical stepper lower limit
+  - A0: Vertical upper (pause) sensor
+  - A1: Vertical stepper lower (home) limit
   - A2: Horizontal home limit switch
   - A3: Horizontal "play" optical sensor (technically could be removed in favor of step count)
   - A4: Horizontal "pick up" optical sensor
