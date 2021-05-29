@@ -100,11 +100,13 @@ void loop() {
 // drops down in place, if it was previously shut off between the sensor and home switch
 // The home status LED will light for the duration of this command
 void homeVerticalAxis() {
-    // Move the motor down until it bumps into the limit
-    while(!digitalRead(VERTICAL_HOME_LIMIT))
-    {
-      VerticalTonearmMotor.step(-1);
-    }
+  // Move the motor down until it bumps into the limit
+  while(!digitalRead(VERTICAL_HOME_LIMIT))
+  {
+    VerticalTonearmMotor.step(-1);
+  }
+    
+  releaseCurrentFromBothMotors();
 }
 
 void homeTonearm() {
@@ -119,6 +121,8 @@ void pauseAndWaitUntilUnpaused() {
     VerticalTonearmMotor.step(1);
   }
 
+  releaseCurrentFromBothMotors();
+
   // Wait for the user to unpause
   while(!digitalRead(PAUSE_BUTTON)) {
     delay(1);
@@ -129,9 +133,23 @@ void pauseAndWaitUntilUnpaused() {
     VerticalTonearmMotor.step(-1);
   }
 
+  releaseCurrentFromBothMotors();
   digitalWrite(PAUSE_STATUS_LED, LOW);
 }
 
 void playRoutine() {
   // TODO: Implement
+}
+
+// This is used to release current from the motors so they aren't drawing power when not in use
+void releaseCurrentFromBothMotors() {
+  digitalWrite(STEPPER_VERTICAL_PIN1, LOW);
+  digitalWrite(STEPPER_VERTICAL_PIN2, LOW);
+  digitalWrite(STEPPER_VERTICAL_PIN3, LOW);
+  digitalWrite(STEPPER_VERTICAL_PIN4, LOW);
+
+  digitalWrite(STEPPER_HORIZONTAL_PIN1, LOW);
+  digitalWrite(STEPPER_HORIZONTAL_PIN2, LOW);
+  digitalWrite(STEPPER_HORIZONTAL_PIN3, LOW);
+  digitalWrite(STEPPER_HORIZONTAL_PIN4, LOW);
 }
