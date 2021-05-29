@@ -20,6 +20,7 @@ This is a 3-way switch with the center position being "off." Flipping the switch
 As soon as this switch is flipped to "manual" or "automatic," the software setup procedure begins, which can be seen in Figure 1.
 
 ![image](https://user-images.githubusercontent.com/48131480/120053935-06665b80-bffb-11eb-8e6d-85e997d80409.png)
+
 Figure 1. Flow diagram of the setup procedure
 
 ## Play button
