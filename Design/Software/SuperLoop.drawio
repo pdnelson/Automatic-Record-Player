@@ -92,19 +92,25 @@
                         <mxPoint x="250" y="390" as="sourcePoint"/>
                         <mxPoint x="230" y="390" as="targetPoint"/>
                         <Array as="points">
-                            <mxPoint x="80" y="460"/>
-                            <mxPoint x="80" y="220"/>
+                            <mxPoint x="40" y="460"/>
+                            <mxPoint x="40" y="220"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="39" value="" style="endArrow=none;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="15">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
                         <mxPoint x="530" y="430" as="sourcePoint"/>
-                        <mxPoint x="80" y="270" as="targetPoint"/>
+                        <mxPoint x="40" y="270" as="targetPoint"/>
                         <Array as="points">
-                            <mxPoint x="80" y="380"/>
+                            <mxPoint x="40" y="380"/>
                         </Array>
                     </mxGeometry>
+                </mxCell>
+                <mxCell id="41" value="&lt;font color=&quot;#000000&quot;&gt;No&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+                    <mxGeometry x="60" y="350" width="30" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="42" value="&lt;font color=&quot;#000000&quot;&gt;Yes&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+                    <mxGeometry x="170" y="410" width="30" height="20" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
