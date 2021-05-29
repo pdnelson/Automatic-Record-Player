@@ -1,6 +1,7 @@
 #include <Stepper.h>
+#include "ErrorCode.h"
 
-const int stepsPerRevolution = 2048;
+#define STEPS_PER_REVOLUTION 2048
 
 // The vertical stepper motor controls the up and down movements of the tonearm, such as lifting the stylus off of the 
 // record or setting it down
@@ -8,7 +9,7 @@ const int stepsPerRevolution = 2048;
 #define STEPPER_VERTICAL_PIN2 1
 #define STEPPER_VERTICAL_PIN3 2
 #define STEPPER_VERTICAL_PIN4 3
-Stepper VerticalTonearmMotor = Stepper(stepsPerRevolution, STEPPER_VERTICAL_PIN1, STEPPER_VERTICAL_PIN3, STEPPER_VERTICAL_PIN2, STEPPER_VERTICAL_PIN4);
+Stepper VerticalTonearmMotor = Stepper(STEPS_PER_REVOLUTION, STEPPER_VERTICAL_PIN1, STEPPER_VERTICAL_PIN3, STEPPER_VERTICAL_PIN2, STEPPER_VERTICAL_PIN4);
 
 // The horizontal stepper motor controls the left and right movements of the tonearm, such as positioning it at a
 // horizontal axis so the vertical movement can place the tonearm at the correct location
@@ -16,7 +17,7 @@ Stepper VerticalTonearmMotor = Stepper(stepsPerRevolution, STEPPER_VERTICAL_PIN1
 #define STEPPER_HORIZONTAL_PIN2 5
 #define STEPPER_HORIZONTAL_PIN3 6
 #define STEPPER_HORIZONTAL_PIN4 7
-Stepper HorizontalTonearmMotor = Stepper(stepsPerRevolution, STEPPER_HORIZONTAL_PIN1, STEPPER_HORIZONTAL_PIN3, STEPPER_HORIZONTAL_PIN2, STEPPER_HORIZONTAL_PIN4);
+Stepper HorizontalTonearmMotor = Stepper(STEPS_PER_REVOLUTION, STEPPER_HORIZONTAL_PIN1, STEPPER_HORIZONTAL_PIN3, STEPPER_HORIZONTAL_PIN2, STEPPER_HORIZONTAL_PIN4);
 
 // Buttons that the user can press to execute certain movements
 #define HOME_BUTTON 8
@@ -50,20 +51,32 @@ Stepper HorizontalTonearmMotor = Stepper(stepsPerRevolution, STEPPER_HORIZONTAL_
 
 // The motors used in this project are 28BYJ-48 stepper motors, which I've found to cap at 11 RPM 
 // before becoming too unreliable. 8 or 9 I've found to be a good balance for speed and reliability at 5v DC
-int movementRPM = 8;
+#define MOVEMENT_RPM 8
+
+// These are timeouts used for error checking, so the hardware doesn't damage itself.
+// Essentially, if the steps exceed this number and the motor has not yet reached its
+// destination, an error has occurred
+#define PLAY_TIMEOUT_STEPS 50
+#define HOME_TIMEOUT_STEPS 50 // TODO: Determine values for these fields
+#define PAUSE_TIMEOUT_STEPS 500
+
+// Step counts used for error checking. We will have an idea of how many steps a movement should take,
+// so here we are keeping track of those so we know it doesn't exceed the limits defined above
+int verticalStepCount = 0;
+int horizontalStepCount = 0;
 
 void setup() {
   pinMode(STEPPER_VERTICAL_PIN1, OUTPUT);
   pinMode(STEPPER_VERTICAL_PIN2, OUTPUT);
   pinMode(STEPPER_VERTICAL_PIN3, OUTPUT);
   pinMode(STEPPER_VERTICAL_PIN4, OUTPUT);
-  VerticalTonearmMotor.setSpeed(movementRPM);
+  VerticalTonearmMotor.setSpeed(MOVEMENT_RPM);
   
   pinMode(STEPPER_HORIZONTAL_PIN1, OUTPUT);
   pinMode(STEPPER_HORIZONTAL_PIN2, OUTPUT);
   pinMode(STEPPER_HORIZONTAL_PIN3, OUTPUT);
   pinMode(STEPPER_HORIZONTAL_PIN4, OUTPUT);
-  HorizontalTonearmMotor.setSpeed(movementRPM);
+  HorizontalTonearmMotor.setSpeed(MOVEMENT_RPM);
   
   pinMode(HOME_BUTTON, INPUT);
   pinMode(PLAY_BUTTON, INPUT);
@@ -105,27 +118,47 @@ void loop() {
 // drops down in place, if it was previously shut off between the sensor and home switch
 // The home status LED will light for the duration of this command
 void homeVerticalAxis() {
-  // Move the motor down until it bumps into the limit
+
+  // We always want to make sure the vertical step count starts at 0 so there aren't leftover steps
+  // from a previous function and the turntable is set to an error state early
+  verticalStepCount = 0;
+
+  // Move the motor down until it bumps into the limit, or timeout is reached
   while(!digitalRead(VERTICAL_HOME_LIMIT))
   {
     VerticalTonearmMotor.step(-1);
+
+    // If the limit switch isn't hit in the expected time, error the turntable
+    if(verticalStepCount++ >= PAUSE_TIMEOUT_STEPS) {
+      setErrorState(ErrorCode::VerticalHomeError);
+    }
   }
-    
+
   releaseCurrentFromBothMotors();
 }
 
 void homeTonearm() {
+  verticalStepCount = 0;
+  horizontalStepCount = 0;
+
   // TODO: Implement
 }
 
 void pauseAndWaitUntilUnpaused() {
   digitalWrite(PAUSE_STATUS_LED, HIGH);
+  verticalStepCount = 0;
 
   // Move the motor up until the pick-up limit is hit
   while(!digitalRead(VERTICAL_PICKUP_LIMIT)) {
     VerticalTonearmMotor.step(1);
+    
+    // If the limit switch isn't hit in the expected time, error the turntable
+    if(verticalStepCount++ >= PAUSE_TIMEOUT_STEPS) {
+      setErrorState(ErrorCode::VerticalPickupError);
+    }
   }
 
+  verticalStepCount = 0;
   releaseCurrentFromBothMotors();
 
   // Wait for the user to unpause
@@ -136,6 +169,11 @@ void pauseAndWaitUntilUnpaused() {
   // Move the motor down until the vertical home limit is hit
   while(!digitalRead(VERTICAL_HOME_LIMIT)) {
     VerticalTonearmMotor.step(-1);
+    
+    // If the limit switch isn't hit in the expected time, error the turntable
+    if(verticalStepCount++ >= PAUSE_TIMEOUT_STEPS) {
+      setErrorState(ErrorCode::VerticalHomeError);
+    }
   }
 
   releaseCurrentFromBothMotors();
@@ -143,6 +181,9 @@ void pauseAndWaitUntilUnpaused() {
 }
 
 void playRoutine() {
+  verticalStepCount = 0;
+  horizontalStepCount = 0;
+
   // TODO: Implement
 }
 
@@ -157,4 +198,45 @@ void releaseCurrentFromBothMotors() {
   digitalWrite(STEPPER_HORIZONTAL_PIN2, LOW);
   digitalWrite(STEPPER_HORIZONTAL_PIN3, LOW);
   digitalWrite(STEPPER_HORIZONTAL_PIN4, LOW);
+}
+
+// This stops all movement and sets the turntable in an error state to prevent damage.
+// This will be called if a motor stall has been detected.
+// The user will have to restart the turntable if this occurs.
+void setErrorState(ErrorCode errorCode) {
+
+  // Turn off all motors and LEDs
+  releaseCurrentFromBothMotors();
+  digitalWrite(PAUSE_STATUS_LED, LOW);
+  digitalWrite(MOVEMENT_STATUS_LED, LOW);
+
+  switch(errorCode) {
+
+    // Slow-blink pause LED
+    case ErrorCode::VerticalHomeError:
+      blinkLed(PAUSE_STATUS_LED, 1000);
+
+    // Fast-blink pause LED
+    case ErrorCode::VerticalPickupError:
+      blinkLed(PAUSE_STATUS_LED, 250);
+
+    // Slow-blink movement LED
+    case ErrorCode::HorizontalHomeError:
+      blinkLed(MOVEMENT_STATUS_LED, 1000);
+
+    // Fast-blink movement LED
+    case ErrorCode::PlayError:
+      blinkLed(MOVEMENT_STATUS_LED, 250);
+  }
+}
+
+// Blinks a specific LED indefinitely.
+// For use only with error codes
+void blinkLed(int led, int interval) {
+  while(true) {
+    digitalWrite(led, LOW);
+    delay(interval);
+    digitalWrite(led, HIGH);
+    delay(interval);
+  }
 }
