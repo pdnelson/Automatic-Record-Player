@@ -1,4 +1,4 @@
-# Automatic-Turntable
+# Automatic Turntable Introduction
 This is a semi-automatic turntable that plays 7" records! The automatic capabilities will be powered by an Arduino Uno, 2 stepper motors, and a bunch of sensors.
 Some planned features of this turntable include:
 - Stereo RCA outputs for a receiver
