@@ -30,7 +30,7 @@ Stepper HorizontalTonearmMotor = Stepper(stepsPerRevolution, STEPPER_HORIZONTAL_
 
 // Positioning sensors for the vertical tonearm movement. The lower limit switch designates "home" for the tonearm's vertical position
 // The upper sensor is the "pause" position, and will allow the tonearm to go higher to engage with the gearing that moves horizontally
-#define VERTICAL_UPPER_SENSOR A0
+#define VERTICAL_PICKUP_LIMIT A0
 #define VERTICAL_HOME_LIMIT A1
 
 // Positioning sensors for the horizontal tonearm movement. Each one represents a different point that the horizontal tonearm could be in,
@@ -43,10 +43,6 @@ Stepper HorizontalTonearmMotor = Stepper(stepsPerRevolution, STEPPER_HORIZONTAL_
 // Automatic will automatically home the turntable at the end of the record, while manual
 // will not. Even with manual selected, the "home," "pause" and "play" buttons will still work
 #define AUTO_OR_MANUAL_SWITCH A5 // Auto = high; manual = low
-
-// This is an internal step count for the motors, so we know how many steps it has taken
-int32_t verticalStepCount = 0;
-int32_t horizontalStepCount = 0;
 
 // The motors used in this project are 28BYJ-48 stepper motors, which I've found to cap at 11 RPM 
 // before becoming too unreliable. 8 or 9 I've found to be a good balance for speed and reliability at 5v DC
@@ -78,8 +74,8 @@ void setup() {
     homeTonearm();
   }
 
-  // Otherwise, we only want to home the vertical axis, which will drop the tonearm in its current location
-  else {
+  // Otherwise, we only want to home the vertical axis if it isn't already homed, which will drop the tonearm in its current location
+  else if(!digitalRead(VERTICAL_HOME_LIMIT)) {
     homeVerticalAxis();
   }
 }
@@ -104,29 +100,40 @@ void loop() {
 // drops down in place, if it was previously shut off between the sensor and home switch
 // The home status LED will light for the duration of this command
 void homeVerticalAxis() {
-  
-    // Home the vertical axis if its home limit is not pressed
-    if(!digitalRead(VERTICAL_HOME_LIMIT)) {
-      digitalWrite(HOME_STATUS_LED, HIGH);
-      // TODO: Implement
-    }
+    digitalWrite(HOME_STATUS_LED, HIGH);
 
-    // Now that the vertical axis has been homed, the step count can be reset to 0
-    verticalStepCount = 0;
+    // Move the motor down until it bumps into the limit
+    while(!digitalRead(VERTICAL_HOME_LIMIT))
+    {
+      VerticalTonearmMotor.step(-1);
+    }
 
     digitalWrite(HOME_STATUS_LED, LOW);
 }
 
 void homeTonearm() {
   // TODO: Implement
-
-  // Now that the axes have been homed, their step counts can be reset to 0
-  verticalStepCount = 0;
-  horizontalStepCount = 0;
 }
 
 void pauseAndWaitUntilUnpaused() {
-  // TODO: Implement
+  digitalWrite(PAUSE_STATUS_LED, HIGH);
+
+  // Move the motor up until the pick-up limit is hit
+  while(!digitalRead(VERTICAL_PICKUP_LIMIT)) {
+    VerticalTonearmMotor.step(1);
+  }
+
+  // Wait for the user to unpause
+  while(!digitalRead(PAUSE_BUTTON)) {
+    delay(1);
+  }
+
+  // Move the motor down until the vertical home limit is hit
+  while(!digitalRead(VERTICAL_HOME_LIMIT)) {
+    VerticalTonearmMotor.step(-1);
+  }
+
+  digitalWrite(PAUSE_STATUS_LED, LOW);
 }
 
 void playRoutine() {
