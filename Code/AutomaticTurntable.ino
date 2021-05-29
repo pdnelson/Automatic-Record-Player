@@ -86,18 +86,19 @@ void setup() {
   }
 }
 
+// This sits and waits for any of the command buttons to be pressed.
+// As soon as a button is pressed, the corresponding command routine is executed
 void loop() {
+  if(digitalRead(PLAY_BUTTON)) {
+    playRoutine();
+  }
 
-  // IR SENSOR TEST
-  bool sensorStatus = digitalRead(VERTICAL_UPPER_SENSOR);
+  if(digitalRead(PAUSE_BUTTON)) {
+    pauseAndWaitUntilUnpaused();
+  }
 
-  // If sensor is not tripped, move the motors
-  if(sensorStatus) {
-    VerticalTonearmMotor.step(1);
-    verticalStepCount++;
-
-    HorizontalTonearmMotor.step(1);
-    horizontalStepCount++;
+  if(digitalRead(HOME_BUTTON)) {
+    homeTonearm();
   }
 }
 
@@ -122,9 +123,17 @@ void homeVerticalAxis() {
 }
 
 void homeTonearm() {
-  //TODO: Implement
+  // TODO: Implement
 
   // Now that the axes have been homed, their step counts can be reset to 0
   verticalStepCount = 0;
   horizontalStepCount = 0;
+}
+
+void pauseAndWaitUntilUnpaused() {
+  // TODO: Implement
+}
+
+void playRoutine() {
+  // TODO: Implement
 }
