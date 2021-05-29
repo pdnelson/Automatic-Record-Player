@@ -11,17 +11,23 @@ Some planned features of this turntable include:
 
 The actual "turntable" part is yet to be designed; right now, I'm just working on the automatic functionality.
 
+# Layout
+The layout is yet to be designed, but a very general prototype can be seen in Figure 1.
+
+![image](https://cdn.discordapp.com/attachments/625801308854812684/848020821326037032/20210528_221130.jpg)
+Figure 1. Prototype layout of the turntable.
+
 # Inputs and routines
 The user has a total of four inputs they can use, each triggering their own functions. Most of these functions must be initiated by the user by either pressing a button or flipping a switch, though homing can also be done automatically, which will be explained in more detail later on. Routine interrupt is currently not planned. This means that while one routine is running, none of the others can be executed for the duration of the currently-running routine.
 
 ## Automatic/manual switch
 This is a 3-way switch with the center position being "off." Flipping the switch to the "up" position will set the turntable to automatic, while "down" will set it to manual. The turntable will automatically be homed upon flipping the switch to "automatic." Flipping it to "manual" will home the vertical axis, which will set the tonearm down in place where it currently is. The reason for this inclusion is to account for us not knowing what position the tonearm will be in when the device is turned on.
 
-As soon as this switch is flipped to "manual" or "automatic," the software setup procedure begins, which can be seen in Figure 1.
+As soon as this switch is flipped to "manual" or "automatic," the software setup procedure begins, which can be seen in Figure 2.
 
 ![image](https://user-images.githubusercontent.com/48131480/120053935-06665b80-bffb-11eb-8e6d-85e997d80409.png)
 
-Figure 1. Flow diagram of the setup procedure
+Figure 2. Flow diagram of the setup procedure
 
 ## Play button
 The "play" button will pick the tonearm up from any point, and drop it at the beginning of a record. This will work using a slotted optical sensor that denotes the "play" position. If either the pick-up or play sensors are "high," then the tonearm will move left to find the edge of the record, otherwise it will move right.
