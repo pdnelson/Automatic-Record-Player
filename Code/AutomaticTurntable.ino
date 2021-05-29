@@ -23,9 +23,8 @@ Stepper HorizontalTonearmMotor = Stepper(stepsPerRevolution, STEPPER_HORIZONTAL_
 #define PLAY_BUTTON 10
 #define PAUSE_BUTTON 12
 
-// Indicator lights so we can tell what movement the turntable is currently executing
-#define HOME_STATUS_LED_AND_HORIZONTAL_GEARING_SOLENOID 9
-#define PLAY_STATUS_LED 11
+// Indicator lights so we can tell what the turntable is currently doing
+#define MOVEMENT_STATUS_LED 11
 #define PAUSE_STATUS_LED 13
 
 // Positioning sensors for the vertical tonearm movement. The lower limit switch designates "home" for the tonearm's vertical position
@@ -38,6 +37,11 @@ Stepper HorizontalTonearmMotor = Stepper(stepsPerRevolution, STEPPER_HORIZONTAL_
 #define HORIZONTAL_HOME_SENSOR A2 // Tells the tonearm where "home" is horizontally
 #define HORIZONTAL_PLAY_SENSOR A3 // Tells the tonearm where to drop the stylus down on the record
 #define HORIZONTAL_PICKUP_SENSOR A4 // Tells the tonearm where the end of the record is
+
+// This is used to engage the horizontal gears for movement. This is needed so that the gears aren't engaged
+// when a record is playing or any other times, otherwise the record would not be able to move the tonearm
+// very well...
+#define HORIZONTAL_GEARING_SOLENOID 9
 
 // This tells us whether the user flipped the 3-way switch to "automatic" or "manual"
 // Automatic will automatically home the turntable at the end of the record, while manual
@@ -65,9 +69,10 @@ void setup() {
   pinMode(PLAY_BUTTON, INPUT);
   pinMode(PAUSE_BUTTON, INPUT);
 
-  pinMode(HOME_STATUS_LED_AND_HORIZONTAL_GEARING_SOLENOID, OUTPUT);
-  pinMode(PLAY_STATUS_LED, OUTPUT);
+  pinMode(MOVEMENT_STATUS_LED, OUTPUT);
   pinMode(PAUSE_STATUS_LED, OUTPUT);
+
+  pinMode(HORIZONTAL_GEARING_SOLENOID, OUTPUT);
 
   // If the turntable is turned on to "automatic," then home the whole tonearm
   if(digitalRead(AUTO_OR_MANUAL_SWITCH)) {
