@@ -24,7 +24,7 @@ Stepper HorizontalTonearmMotor = Stepper(stepsPerRevolution, STEPPER_HORIZONTAL_
 #define PAUSE_BUTTON 12
 
 // Indicator lights so we can tell what movement the turntable is currently executing
-#define HOME_STATUS_LED 9
+#define HOME_STATUS_LED_AND_HORIZONTAL_GEARING_SOLENOID 9
 #define PLAY_STATUS_LED 11
 #define PAUSE_STATUS_LED 13
 
@@ -65,7 +65,7 @@ void setup() {
   pinMode(PLAY_BUTTON, INPUT);
   pinMode(PAUSE_BUTTON, INPUT);
 
-  pinMode(HOME_STATUS_LED, OUTPUT);
+  pinMode(HOME_STATUS_LED_AND_HORIZONTAL_GEARING_SOLENOID, OUTPUT);
   pinMode(PLAY_STATUS_LED, OUTPUT);
   pinMode(PAUSE_STATUS_LED, OUTPUT);
 
@@ -100,15 +100,11 @@ void loop() {
 // drops down in place, if it was previously shut off between the sensor and home switch
 // The home status LED will light for the duration of this command
 void homeVerticalAxis() {
-    digitalWrite(HOME_STATUS_LED, HIGH);
-
     // Move the motor down until it bumps into the limit
     while(!digitalRead(VERTICAL_HOME_LIMIT))
     {
       VerticalTonearmMotor.step(-1);
     }
-
-    digitalWrite(HOME_STATUS_LED, LOW);
 }
 
 void homeTonearm() {
