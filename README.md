@@ -55,7 +55,7 @@ The home routine, defined in the software, can be seen in Figure X.
   - 6: Horizontal stepper motor pin 3
   - 7: Horizontal stepper motor pin 4
   - 8: Home button
-  - 9: Home status LED
+  - 9: Home status LED/horizontal gearing solenoid
   - 10: Play button
   - 11: Play status LED
   - 12: Pause button
