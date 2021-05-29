@@ -128,8 +128,8 @@ void homeVerticalAxis() {
   {
     VerticalTonearmMotor.step(-1);
 
-    // If the limit switch isn't hit in the expected time, error the turntable
-    if(verticalStepCount++ >= PAUSE_TIMEOUT_STEPS) {
+    // If the limit switch isn't hit in the expected time, or the wrong limit switch is hit, error the turntable
+    if(verticalStepCount++ >= PAUSE_TIMEOUT_STEPS || digitalRead(VERTICAL_PICKUP_LIMIT)) {
       setErrorState(ErrorCode::VerticalHomeError);
     }
   }
@@ -138,10 +138,13 @@ void homeVerticalAxis() {
 }
 
 void homeTonearm() {
+  digitalWrite(MOVEMENT_STATUS_LED, HIGH);
   verticalStepCount = 0;
   horizontalStepCount = 0;
 
   // TODO: Implement
+  
+  digitalWrite(MOVEMENT_STATUS_LED, LOW);
 }
 
 void pauseAndWaitUntilUnpaused() {
@@ -152,8 +155,8 @@ void pauseAndWaitUntilUnpaused() {
   while(!digitalRead(VERTICAL_PICKUP_LIMIT)) {
     VerticalTonearmMotor.step(1);
     
-    // If the limit switch isn't hit in the expected time, error the turntable
-    if(verticalStepCount++ >= PAUSE_TIMEOUT_STEPS) {
+    // If the limit switch isn't hit in the expected time, or the wrong limit switch is hit, error the turntable
+    if(verticalStepCount++ >= PAUSE_TIMEOUT_STEPS || digitalRead(VERTICAL_HOME_LIMIT)) {
       setErrorState(ErrorCode::VerticalPickupError);
     }
   }
@@ -170,8 +173,8 @@ void pauseAndWaitUntilUnpaused() {
   while(!digitalRead(VERTICAL_HOME_LIMIT)) {
     VerticalTonearmMotor.step(-1);
     
-    // If the limit switch isn't hit in the expected time, error the turntable
-    if(verticalStepCount++ >= PAUSE_TIMEOUT_STEPS) {
+    // If the limit switch isn't hit in the expected time, or the wrong limit switch is hit, error the turntable
+    if(verticalStepCount++ >= PAUSE_TIMEOUT_STEPS || digitalRead(VERTICAL_PICKUP_LIMIT)) {
       setErrorState(ErrorCode::VerticalHomeError);
     }
   }
@@ -181,10 +184,13 @@ void pauseAndWaitUntilUnpaused() {
 }
 
 void playRoutine() {
+  digitalWrite(MOVEMENT_STATUS_LED, HIGH);
   verticalStepCount = 0;
   horizontalStepCount = 0;
 
   // TODO: Implement
+
+  digitalWrite(MOVEMENT_STATUS_LED, LOW);
 }
 
 // This is used to release current from the motors so they aren't drawing power when not in use
@@ -218,7 +224,7 @@ void setErrorState(ErrorCode errorCode) {
 
     // Fast-blink pause LED
     case ErrorCode::VerticalPickupError:
-      blinkLed(PAUSE_STATUS_LED, 250);
+      blinkLed(PAUSE_STATUS_LED, 150);
 
     // Slow-blink movement LED
     case ErrorCode::HorizontalHomeError:
@@ -226,7 +232,7 @@ void setErrorState(ErrorCode errorCode) {
 
     // Fast-blink movement LED
     case ErrorCode::PlayError:
-      blinkLed(MOVEMENT_STATUS_LED, 250);
+      blinkLed(MOVEMENT_STATUS_LED, 150);
   }
 }
 
