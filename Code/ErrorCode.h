@@ -4,10 +4,10 @@
 // Various errors that the turntable could encounter during operation
 enum class ErrorCode {
 
-    // Took to long to hit the vertical lower (home) limit switch
+    // Took to long to hit the vertical lower (home) limit switch or hit the wrong limit switch
     VerticalHomeError,
 
-    // Took to long to hit the vertical upper (pickup) limit switch
+    // Took to long to hit the vertical upper (pickup) limit switch or hit the wrong limit switch
     VerticalPickupError,
 
     // Took to long to home the horizontal axis
