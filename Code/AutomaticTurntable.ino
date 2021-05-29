@@ -129,7 +129,7 @@ void homeVerticalAxis() {
     VerticalTonearmMotor.step(-1);
 
     // If the limit switch isn't hit in the expected time, or the wrong limit switch is hit, error the turntable.
-    if(verticalStepCount++ >= PAUSE_TIMEOUT_STEPS || digitalRead(VERTICAL_PICKUP_LIMIT)) {
+    if(verticalStepCount++ >= PAUSE_TIMEOUT_STEPS || (digitalRead(VERTICAL_PICKUP_LIMIT) && verticalStepCount > 50)) {
       setErrorState(ErrorCode::VerticalHomeError);
     }
   }
@@ -156,7 +156,7 @@ void pauseAndWaitUntilUnpaused() {
     VerticalTonearmMotor.step(1);
     
     // If the limit switch isn't hit in the expected time, or the wrong limit switch is hit, error the turntable.
-    if(verticalStepCount++ >= PAUSE_TIMEOUT_STEPS || digitalRead(VERTICAL_HOME_LIMIT)) {
+    if(verticalStepCount++ >= PAUSE_TIMEOUT_STEPS || (digitalRead(VERTICAL_HOME_LIMIT) && verticalStepCount > 50)) {
       setErrorState(ErrorCode::VerticalPickupError);
     }
   }
@@ -174,7 +174,7 @@ void pauseAndWaitUntilUnpaused() {
     VerticalTonearmMotor.step(-1);
     
     // If the limit switch isn't hit in the expected time, or the wrong limit switch is hit, error the turntable.
-    if(verticalStepCount++ >= PAUSE_TIMEOUT_STEPS || digitalRead(VERTICAL_PICKUP_LIMIT)) {
+    if(verticalStepCount++ >= PAUSE_TIMEOUT_STEPS || (digitalRead(VERTICAL_PICKUP_LIMIT) && verticalStepCount > 50)) {
       setErrorState(ErrorCode::VerticalHomeError);
     }
   }
