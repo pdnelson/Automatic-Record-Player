@@ -72,12 +72,15 @@ The home routine, defined in the software, can be seen in Figure X.
 Note: Due to limitations, I had to use some of the analog lines for digital values.
 
 # Parts list (so far)
+## Electrical parts
 - Arduino Uno
 - Mean well RS-15-5 5V 3A power supply
 - 2x 28BYJ-48 stepper motors
 - 2x ULN2003 stepper motor drivers
-- 4x slotted optical sensors
-- 1x limit switche (I got them out of some computer mice...)
+- 3x slotted optical sensors
+- 2x limit switches (I got them out of some computer mice...)
+
+## Mechanical parts
 - 2x 3/16" steel rods, 4" long
 - 4x 3/16" sleeve bearings
 - 1x 12x13mm butt hinge
