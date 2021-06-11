@@ -83,6 +83,6 @@ Note: Due to limitations, I had to use some of the analog lines for digital valu
 ## Mechanical parts
 - 2x 3/16" steel rods, 4" long
 - 4x 3/16" sleeve bearings
-- 1x screw; (part # 91251A055 on McMaster)
+- many screws; (part # 91251A055 on McMaster)
   - ![image](https://user-images.githubusercontent.com/48131480/121616639-4254e400-ca31-11eb-9ad7-fcec2605ea7d.png)
-
+- many nuts; 0-80, 1/8" wd., 3/64" ht., (part # 90730A001 on McMaster)
