@@ -147,6 +147,8 @@ void homeTonearm() {
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
 }
 
+// This is the pause routine that will lift up the tonearm from the record until the user "unpauses" by pressing the
+// pause button again
 void pauseAndWaitUntilUnpaused() {
   digitalWrite(PAUSE_STATUS_LED, HIGH);
   verticalStepCount = 0;
@@ -191,6 +193,10 @@ void playRoutine() {
   // TODO: Implement.
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
+}
+
+void performTonearmMovement() {
+  
 }
 
 // This is used to release current from the motors so they aren't drawing power when not in use.
