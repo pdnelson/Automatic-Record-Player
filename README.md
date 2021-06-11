@@ -87,3 +87,9 @@ Note: Due to limitations, I had to use some of the analog lines for digital valu
 - many screws; (part # 91251A055 on McMaster)
   - ![image](https://user-images.githubusercontent.com/48131480/121616639-4254e400-ca31-11eb-9ad7-fcec2605ea7d.png)
 - many nuts; 0-80, 5/32" wd., 3/64" ht., (part # 	90480A001 on McMaster)
+
+## Miscellaneous parts
+- 10x10mm heat sinks
+- 16x4.5mm fan
+- Thermal paste
+- 3x OUTEMU (Gaote) Brown Switch 3 Pin Mechanical Keyswitch 
