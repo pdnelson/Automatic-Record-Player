@@ -82,5 +82,8 @@ Note: Due to limitations, I had to use some of the analog lines for digital valu
 
 ## Mechanical parts
 - 2x 3/16" steel rods, 4" long
+- 1x 3/16" steel rods, 3" long
 - 4x 3/16" sleeve bearings
-- 1x 12x13mm butt hinge
+- many screws; (part # 91251A055 on McMaster)
+  - ![image](https://user-images.githubusercontent.com/48131480/121616639-4254e400-ca31-11eb-9ad7-fcec2605ea7d.png)
+- many nuts; 0-80, 5/32" wd., 3/64" ht., (part # 	90480A001 on McMaster)
