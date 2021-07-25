@@ -85,7 +85,7 @@ Note: Due to limitations, I had to use some of the analog lines for digital valu
 - 1x 3/16" steel rods, 3" long
 - 4x 3/16" sleeve bearings
 - many screws; 4-40 threading, 0.183" diameter head
-- many nuts; 4-40 threading, 1/4" diameter, 3/32" thick
+- many square nuts; 4-40 threading, 1/4" diameter, 3/32" thick
 - washers; 18-8 Stainless Steel Washer for Number 10 Screw Size, 0.203" ID, 0.438" OD
 
 ## Miscellaneous parts
