@@ -1,5 +1,6 @@
 #include <Stepper.h>
 #include "ErrorCode.h"
+#include "MovementPosition.h"
 
 #define STEPS_PER_REVOLUTION 2048
 
@@ -58,12 +59,15 @@ Stepper HorizontalTonearmMotor = Stepper(STEPS_PER_REVOLUTION, STEPPER_HORIZONTA
 // destination, an error has occurred.
 #define PLAY_TIMEOUT_STEPS 50
 #define HOME_TIMEOUT_STEPS 50 // TODO: Determine values for these fields.
-#define PAUSE_TIMEOUT_STEPS 500
+#define PAUSE_TIMEOUT_STEPS 1000 // Number of steps until a vertical movement should time out.
+#define STEPS_TO_RELIEVE_LIMIT 250 // Number of steps it takes to un-click a limit switch.
+
+#define TONEARM_DOWN_SPEED 5 // The speed at which the tonarm gets set down.
+#define TONEARM_LIFT_SPEED 7 // The speed at which the tonearm gets lifted up.
 
 // Step counts used for error checking. We will have an idea of how many steps a movement should take,
 // so here we are keeping track of those so we know it doesn't exceed the limits defined above.
-int verticalStepCount = 0;
-int horizontalStepCount = 0;
+int movementStepCount = 0;
 
 void setup() {
   pinMode(STEPPER_VERTICAL_PIN1, OUTPUT);
@@ -94,7 +98,7 @@ void setup() {
 
   // Otherwise, we only want to home the vertical axis, which will drop the tonearm in its current location.
   else {
-    homeVerticalAxis();
+    performTonearmMovement(MovementPosition::LowerLimit, TONEARM_DOWN_SPEED);
   }
 }
 
@@ -114,33 +118,8 @@ void loop() {
   }
 }
 
-// This is only used when first powering on in manual mode to verify that the tonearm
-// drops down in place, if it was previously shut off between the sensor and home switch.
-// The home status LED will light for the duration of this command.
-void homeVerticalAxis() {
-
-  // We always want to make sure the vertical step count starts at 0 so there aren't leftover steps
-  // from a previous function and the turntable is set to an error state early.
-  verticalStepCount = 0;
-
-  // Move the motor down until it bumps into the limit, or timeout is reached.
-  while(!digitalRead(VERTICAL_HOME_LIMIT))
-  {
-    VerticalTonearmMotor.step(-1);
-
-    // If the limit switch isn't hit in the expected time, or the wrong limit switch is hit, error the turntable.
-    if(verticalStepCount++ >= PAUSE_TIMEOUT_STEPS || (digitalRead(VERTICAL_PICKUP_LIMIT) && verticalStepCount > 100)) {
-      setErrorState(ErrorCode::VerticalHomeError);
-    }
-  }
-
-  releaseCurrentFromBothMotors();
-}
-
 void homeTonearm() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
-  verticalStepCount = 0;
-  horizontalStepCount = 0;
 
   // TODO: Implement.
 
@@ -151,19 +130,9 @@ void homeTonearm() {
 // pause button again
 void pauseAndWaitUntilUnpaused() {
   digitalWrite(PAUSE_STATUS_LED, HIGH);
-  verticalStepCount = 0;
 
-  // Move the motor up until the pick-up limit is hit.
-  while(!digitalRead(VERTICAL_PICKUP_LIMIT)) {
-    VerticalTonearmMotor.step(1);
-    
-    // If the limit switch isn't hit in the expected time, or the wrong limit switch is hit, error the turntable.
-    if(verticalStepCount++ >= PAUSE_TIMEOUT_STEPS || (digitalRead(VERTICAL_HOME_LIMIT) && verticalStepCount > 100)) {
-      setErrorState(ErrorCode::VerticalPickupError);
-    }
-  }
+  performTonearmMovement(MovementPosition::UpperLimit, TONEARM_LIFT_SPEED);
 
-  verticalStepCount = 0;
   releaseCurrentFromBothMotors();
 
   // Wait for the user to unpause.
@@ -171,15 +140,7 @@ void pauseAndWaitUntilUnpaused() {
     delay(1);
   }
 
-  // Move the motor down until the vertical home limit is hit.
-  while(!digitalRead(VERTICAL_HOME_LIMIT)) {
-    VerticalTonearmMotor.step(-1);
-    
-    // If the limit switch isn't hit in the expected time, or the wrong limit switch is hit, error the turntable.
-    if(verticalStepCount++ >= PAUSE_TIMEOUT_STEPS || (digitalRead(VERTICAL_PICKUP_LIMIT) && verticalStepCount > 100)) {
-      setErrorState(ErrorCode::VerticalHomeError);
-    }
-  }
+  performTonearmMovement(MovementPosition::LowerLimit, TONEARM_DOWN_SPEED);
 
   releaseCurrentFromBothMotors();
   digitalWrite(PAUSE_STATUS_LED, LOW);
@@ -187,16 +148,54 @@ void pauseAndWaitUntilUnpaused() {
 
 void playRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
-  verticalStepCount = 0;
-  horizontalStepCount = 0;
 
   // TODO: Implement.
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
 }
 
-void performTonearmMovement() {
-  
+// Performs the tonearm movement, whether that be vertical or horizontal.
+void performTonearmMovement(MovementPosition destination, int speed) {
+
+    // We always want to make sure the vertical step count starts at 0 so there aren't leftover steps
+    // from a previous function and the turntable is set to an error state early.
+    movementStepCount = 0;
+
+    switch(destination) {
+
+      case MovementPosition::LowerLimit:
+        VerticalTonearmMotor.setSpeed(speed);
+        while(!digitalRead(VERTICAL_HOME_LIMIT))
+        {
+          VerticalTonearmMotor.step(-1);
+
+          // If the limit switch isn't hit in the expected time, or the wrong limit switch is hit, error the turntable.
+          if(movementStepCount++ >= PAUSE_TIMEOUT_STEPS || (digitalRead(VERTICAL_PICKUP_LIMIT) && movementStepCount > STEPS_TO_RELIEVE_LIMIT)) {
+            setErrorState(ErrorCode::VerticalHomeError);
+          }
+        }
+        break;
+
+      case MovementPosition::UpperLimit:
+        VerticalTonearmMotor.setSpeed(speed);
+        while(!digitalRead(VERTICAL_PICKUP_LIMIT)) {
+          VerticalTonearmMotor.step(1);
+          
+          // If the limit switch isn't hit in the expected time, or the wrong limit switch is hit, error the turntable.
+          if(movementStepCount++ >= PAUSE_TIMEOUT_STEPS || (digitalRead(VERTICAL_HOME_LIMIT) && movementStepCount > STEPS_TO_RELIEVE_LIMIT)) {
+            setErrorState(ErrorCode::VerticalPickupError);
+          }
+        }
+        break;
+
+      case MovementPosition::PlayPosition:
+        HorizontalTonearmMotor.setSpeed(speed);
+        break;
+
+      case MovementPosition::HomePosition:
+        HorizontalTonearmMotor.setSpeed(speed);
+        break;
+    }
 }
 
 // This is used to release current from the motors so they aren't drawing power when not in use.
