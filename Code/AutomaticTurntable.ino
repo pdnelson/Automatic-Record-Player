@@ -1,6 +1,7 @@
 #include <Stepper.h>
 #include "ErrorCode.h"
 #include "MovementPosition.h"
+#include "MotorAxis.h"
 
 #define STEPS_PER_REVOLUTION 2048
 
@@ -133,8 +134,6 @@ void pauseAndWaitUntilUnpaused() {
 
   performTonearmMovement(MovementPosition::UpperLimit, TONEARM_LIFT_SPEED);
 
-  releaseCurrentFromBothMotors();
-
   // Wait for the user to unpause.
   while(!digitalRead(PAUSE_BUTTON)) {
     delay(1);
@@ -142,7 +141,6 @@ void pauseAndWaitUntilUnpaused() {
 
   performTonearmMovement(MovementPosition::LowerLimit, TONEARM_DOWN_SPEED);
 
-  releaseCurrentFromBothMotors();
   digitalWrite(PAUSE_STATUS_LED, LOW);
 }
 
@@ -174,6 +172,7 @@ void performTonearmMovement(MovementPosition destination, int speed) {
             setErrorState(ErrorCode::VerticalHomeError);
           }
         }
+        releaseCurrentFromMotor(MotorAxis::Vertical);
         break;
 
       case MovementPosition::UpperLimit:
@@ -186,29 +185,39 @@ void performTonearmMovement(MovementPosition destination, int speed) {
             setErrorState(ErrorCode::VerticalPickupError);
           }
         }
+        releaseCurrentFromMotor(MotorAxis::Vertical);
         break;
 
       case MovementPosition::PlayPosition:
+
         HorizontalTonearmMotor.setSpeed(speed);
+        releaseCurrentFromMotor(MotorAxis::Horizontal);
         break;
 
       case MovementPosition::HomePosition:
         HorizontalTonearmMotor.setSpeed(speed);
+        releaseCurrentFromMotor(MotorAxis::Horizontal);
         break;
     }
 }
 
-// This is used to release current from the motors so they aren't drawing power when not in use.
-void releaseCurrentFromBothMotors() {
-  digitalWrite(STEPPER_VERTICAL_PIN1, LOW);
-  digitalWrite(STEPPER_VERTICAL_PIN2, LOW);
-  digitalWrite(STEPPER_VERTICAL_PIN3, LOW);
-  digitalWrite(STEPPER_VERTICAL_PIN4, LOW);
+// This is used to release current from one or both motors so they aren't drawing power when not in use.
+void releaseCurrentFromMotor(MotorAxis axis) {
 
-  digitalWrite(STEPPER_HORIZONTAL_PIN1, LOW);
-  digitalWrite(STEPPER_HORIZONTAL_PIN2, LOW);
-  digitalWrite(STEPPER_HORIZONTAL_PIN3, LOW);
-  digitalWrite(STEPPER_HORIZONTAL_PIN4, LOW);
+  if(axis == MotorAxis::Vertical || axis == MotorAxis::VerticalAndHorizontal) {
+    digitalWrite(STEPPER_VERTICAL_PIN1, LOW);
+    digitalWrite(STEPPER_VERTICAL_PIN2, LOW);
+    digitalWrite(STEPPER_VERTICAL_PIN3, LOW);
+    digitalWrite(STEPPER_VERTICAL_PIN4, LOW);
+  }
+
+  if(axis == MotorAxis::Horizontal || axis == MotorAxis::VerticalAndHorizontal) {
+    digitalWrite(STEPPER_HORIZONTAL_PIN1, LOW);
+    digitalWrite(STEPPER_HORIZONTAL_PIN2, LOW);
+    digitalWrite(STEPPER_HORIZONTAL_PIN3, LOW);
+    digitalWrite(STEPPER_HORIZONTAL_PIN4, LOW);
+    digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
+  }
 }
 
 // This stops all movement and sets the turntable in an error state to prevent damage.
@@ -217,10 +226,9 @@ void releaseCurrentFromBothMotors() {
 void setErrorState(ErrorCode errorCode) {
 
   // Turn off all motors and LEDs.
-  releaseCurrentFromBothMotors();
+  releaseCurrentFromMotor(MotorAxis::VerticalAndHorizontal);
   digitalWrite(PAUSE_STATUS_LED, LOW);
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
-  digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
 
   switch(errorCode) {
 
