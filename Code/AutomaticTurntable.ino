@@ -65,6 +65,7 @@ Stepper HorizontalTonearmMotor = Stepper(STEPS_PER_REVOLUTION, STEPPER_HORIZONTA
 
 #define TONEARM_DOWN_SPEED 5 // The speed at which the tonarm gets set down.
 #define TONEARM_LIFT_SPEED 7 // The speed at which the tonearm gets lifted up.
+#define TONEARM_HORIZONTAL_SPEED 8 // The speed at which the tonearm moves horizontally.
 
 // Step counts used for error checking. We will have an idea of how many steps a movement should take,
 // so here we are keeping track of those so we know it doesn't exceed the limits defined above.
@@ -122,7 +123,11 @@ void loop() {
 void homeTonearm() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
-  // TODO: Implement.
+  performTonearmMovement(MovementPosition::UpperLimit, TONEARM_LIFT_SPEED);
+
+  performTonearmMovement(MovementPosition::HomePosition, TONEARM_HORIZONTAL_SPEED);
+
+  performTonearmMovement(MovementPosition::LowerLimit, TONEARM_DOWN_SPEED);
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
 }
@@ -147,7 +152,11 @@ void pauseAndWaitUntilUnpaused() {
 void playRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
-  // TODO: Implement.
+  performTonearmMovement(MovementPosition::UpperLimit, TONEARM_LIFT_SPEED);
+
+  performTonearmMovement(MovementPosition::PlayPosition, TONEARM_HORIZONTAL_SPEED);
+
+  performTonearmMovement(MovementPosition::LowerLimit, TONEARM_DOWN_SPEED);
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
 }
@@ -189,13 +198,20 @@ void performTonearmMovement(MovementPosition destination, int speed) {
         break;
 
       case MovementPosition::PlayPosition:
-
+        digitalWrite(HORIZONTAL_GEARING_SOLENOID, HIGH);
         HorizontalTonearmMotor.setSpeed(speed);
+
+        // TODO: Implement
+        
         releaseCurrentFromMotor(MotorAxis::Horizontal);
         break;
 
       case MovementPosition::HomePosition:
+        digitalWrite(HORIZONTAL_GEARING_SOLENOID, HIGH);
         HorizontalTonearmMotor.setSpeed(speed);
+
+        // TODO: Implement
+
         releaseCurrentFromMotor(MotorAxis::Horizontal);
         break;
     }
