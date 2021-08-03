@@ -23,26 +23,16 @@ The user has a total of four inputs they can use, each triggering their own func
 ## Automatic/manual switch
 This is a 3-way switch with the center position being "off." Flipping the switch to the "up" position will set the turntable to automatic, while "down" will set it to manual. The turntable will automatically be homed upon flipping the switch to "automatic." Flipping it to "manual" will home the vertical axis, which will set the tonearm down in place where it currently is. The reason for this inclusion is to account for us not knowing what position the tonearm will be in when the device is turned on.
 
-As soon as this switch is flipped to "manual" or "automatic," the software setup procedure begins, which can be seen in Figure 2.
-
-![image](https://user-images.githubusercontent.com/48131480/120053935-06665b80-bffb-11eb-8e6d-85e997d80409.png)
-
-Figure 2. Flow diagram of the setup procedure
+As soon as this switch is flipped to "manual" or "automatic," the software setup procedure begins.
 
 ## Play button
 The "play" button will pick the tonearm up from any point, and drop it at the beginning of a record. This will work using a slotted optical sensor that denotes the "play" position. If either the pick-up or play sensors are "high," then the tonearm will move left to find the edge of the record, otherwise it will move right.
 
-The play routine, defined in the software, can be seen in Figure X.
-
 ## Pause button
-The pause button will lift the tonearm up until the pause sensor becomes "low." When the pause button is pressed again, the tonearm will be gently set down on the record.
-
-The pause routine, defined in the software, can be seen in Figure X.
+The pause button will lift the tonearm up until the pause limit switch becomes "high." When the pause button is pressed again, the tonearm will be gently set down on the record.
 
 ## Home button
 The "home" button will pick the tonearm up from any point, and drop it in its home position. This routine is also automatically called at the end of a record, when the "pick-up" sensor is set "high" and the turntable is set to "automatic."
-
-The home routine, defined in the software, can be seen in Figure X.
 
 # Current pin usage
 - Digital
@@ -93,3 +83,8 @@ Note: Due to limitations, I had to use some of the analog lines for digital valu
 - 10x10mm heat sinks
 - Thermal paste
 - 3x blue cherry mx Mechanical Keyswitch 
+
+## Miscellaneous Progress Images
+
+![image](https://user-images.githubusercontent.com/48131480/127951128-9a074e19-f8e5-4b68-808b-bf73fc30f2ca.png)
+Figure 2. 2 August 2021: Vertical automatic functionality is working, and horizontal is currently in progress. Sensor discs were just made (bottom) that will determine home, pickup, motor power, and play positions.
