@@ -81,7 +81,8 @@ Note: Due to limitations, I had to use some of the analog lines for digital valu
 - 2x limit switches (I got them out of some computer mice...)
 
 ## Mechanical parts
-- 2x 3/16" steel rods, 4" long
+- 1x 3/16" steel rods, 5" long
+- 1x 3/16" steel rods, 4" long
 - 1x 3/16" steel rods, 3" long
 - 4x 3/16" sleeve bearings
 - many screws; 4-40 threading, 0.183" diameter head
@@ -90,6 +91,5 @@ Note: Due to limitations, I had to use some of the analog lines for digital valu
 
 ## Miscellaneous parts
 - 10x10mm heat sinks
-- 16x4.5mm fan
 - Thermal paste
-- 3x OUTEMU (Gaote) Brown Switch 3 Pin Mechanical Keyswitch 
+- 3x blue cherry mx Mechanical Keyswitch 
