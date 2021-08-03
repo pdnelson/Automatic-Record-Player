@@ -83,8 +83,3 @@ Note: Due to limitations, I had to use some of the analog lines for digital valu
 - 10x10mm heat sinks
 - Thermal paste
 - 3x blue cherry mx Mechanical Keyswitch 
-
-## Miscellaneous Progress Images
-
-![image](https://user-images.githubusercontent.com/48131480/127951128-9a074e19-f8e5-4b68-808b-bf73fc30f2ca.png)
-Figure 2. 2 August 2021: Vertical automatic functionality is working, and horizontal is currently in progress. Sensor discs were just made (bottom) that will determine home, pickup, motor power, and play positions.
