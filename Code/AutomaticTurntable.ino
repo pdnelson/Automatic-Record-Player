@@ -201,7 +201,19 @@ void performTonearmMovement(MovementPosition destination, int speed) {
         digitalWrite(HORIZONTAL_GEARING_SOLENOID, HIGH);
         HorizontalTonearmMotor.setSpeed(speed);
 
-        // TODO: Implement
+        int movementDirection = 1;
+        bool currentSensorStatus = digitalRead(HORIZONTAL_PLAY_SENSOR);
+        if(currentSensorStatus) movementDirection = -1; // TODO: Verify this direction is correct
+
+        // Keep moving until the sensor is the opposite of what it started at
+        while(digitalRead(HORIZONTAL_PLAY_SENSOR) == currentSensorStatus) {
+          HorizontalTonearmMotor.step(movementDirection);
+
+          // If the sensor isn't hit in the expected time, error the turntable.
+          if(movementStepCount++ >= PLAY_TIMEOUT_STEPS) {
+            setErrorState(ErrorCode::PlayError);
+          }
+        }
         
         releaseCurrentFromMotor(MotorAxis::Horizontal);
         break;
@@ -210,7 +222,19 @@ void performTonearmMovement(MovementPosition destination, int speed) {
         digitalWrite(HORIZONTAL_GEARING_SOLENOID, HIGH);
         HorizontalTonearmMotor.setSpeed(speed);
 
-        // TODO: Implement
+        int movementDirection = 1;
+        bool currentSensorStatus = digitalRead(HORIZONTAL_HOME_SENSOR);
+        if(currentSensorStatus) movementDirection = -1; // TODO: Verify this direction is correct
+
+        // Keep moving until the sensor is the opposite of what it started at
+        while(digitalRead(HORIZONTAL_HOME_SENSOR) == currentSensorStatus) {
+          HorizontalTonearmMotor.step(movementDirection);
+
+          // If the sensor isn't hit in the expected time, error the turntable.
+          if(movementStepCount++ >= HOME_TIMEOUT_STEPS) {
+            setErrorState(ErrorCode::HorizontalHomeError);
+          }
+        }
 
         releaseCurrentFromMotor(MotorAxis::Horizontal);
         break;
