@@ -1,6 +1,5 @@
 #include <Stepper.h>
 #include "ErrorCode.h"
-#include "MovementPosition.h"
 #include "MotorAxis.h"
 
 #define STEPS_PER_REVOLUTION 2048
@@ -32,8 +31,8 @@ Stepper HorizontalTonearmMotor = Stepper(STEPS_PER_REVOLUTION, STEPPER_HORIZONTA
 
 // Positioning sensors for the vertical tonearm movement. The lower limit switch designates "home" for the tonearm's vertical position.
 // The upper sensor is the "pause" position, and will allow the tonearm to go higher to engage with the gearing that moves horizontally.
-#define VERTICAL_PICKUP_LIMIT A0
-#define VERTICAL_HOME_LIMIT A1
+#define VERTICAL_UPPER_LIMIT A0
+#define VERTICAL_LOWER_LIMIT A1
 
 // Positioning sensors for the horizontal tonearm movement. Each one represents a different point that the horizontal tonearm could be in,
 // and will allow the various funcrtions to move it in the correct direction depending on where it currently is.
@@ -60,16 +59,16 @@ Stepper HorizontalTonearmMotor = Stepper(STEPS_PER_REVOLUTION, STEPPER_HORIZONTA
 // destination, an error has occurred.
 #define PLAY_TIMEOUT_STEPS 50
 #define HOME_TIMEOUT_STEPS 50 // TODO: Determine values for these fields.
-#define PAUSE_TIMEOUT_STEPS 1000 // Number of steps until a vertical movement should time out.
+#define VERTICAL_TIMEOUT_STEPS 1000 // Number of steps until a vertical movement should time out.
 #define STEPS_TO_RELIEVE_LIMIT 250 // Number of steps it takes to un-click a limit switch.
-
-#define TONEARM_DOWN_SPEED 5 // The speed at which the tonarm gets set down.
-#define TONEARM_LIFT_SPEED 7 // The speed at which the tonearm gets lifted up.
-#define TONEARM_HORIZONTAL_SPEED 8 // The speed at which the tonearm moves horizontally.
 
 // Step counts used for error checking. We will have an idea of how many steps a movement should take,
 // so here we are keeping track of those so we know it doesn't exceed the limits defined above.
 int movementStepCount = 0;
+
+// Movement variables
+int movementDirection = 0;
+bool currentSensorStatus = false;
 
 void setup() {
   pinMode(STEPPER_VERTICAL_PIN1, OUTPUT);
@@ -100,7 +99,8 @@ void setup() {
 
   // Otherwise, we only want to home the vertical axis, which will drop the tonearm in its current location.
   else {
-    performTonearmMovement(MovementPosition::LowerLimit, TONEARM_DOWN_SPEED);
+    if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_LOWER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
+      setErrorState(ErrorCode::VerticalHomeError);
   }
 }
 
@@ -123,11 +123,14 @@ void loop() {
 void homeTonearm() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
-  performTonearmMovement(MovementPosition::UpperLimit, TONEARM_LIFT_SPEED);
+  if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_UPPER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
+    setErrorState(ErrorCode::VerticalPickupError);
 
-  performTonearmMovement(MovementPosition::HomePosition, TONEARM_HORIZONTAL_SPEED);
+  if(!moveTonearmToSensor(MotorAxis::Horizontal, HORIZONTAL_HOME_SENSOR, 8, HOME_TIMEOUT_STEPS))
+    setErrorState(ErrorCode::HorizontalHomeError);
 
-  performTonearmMovement(MovementPosition::LowerLimit, TONEARM_DOWN_SPEED);
+  if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_LOWER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
+    setErrorState(ErrorCode::VerticalHomeError);
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
 }
@@ -137,14 +140,16 @@ void homeTonearm() {
 void pauseAndWaitUntilUnpaused() {
   digitalWrite(PAUSE_STATUS_LED, HIGH);
 
-  performTonearmMovement(MovementPosition::UpperLimit, TONEARM_LIFT_SPEED);
+  if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_UPPER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
+    setErrorState(ErrorCode::VerticalPickupError);
 
   // Wait for the user to unpause.
   while(!digitalRead(PAUSE_BUTTON)) {
     delay(1);
   }
 
-  performTonearmMovement(MovementPosition::LowerLimit, TONEARM_DOWN_SPEED);
+  if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_LOWER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
+    setErrorState(ErrorCode::VerticalHomeError);
 
   digitalWrite(PAUSE_STATUS_LED, LOW);
 }
@@ -152,121 +157,81 @@ void pauseAndWaitUntilUnpaused() {
 void playRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
-  performTonearmMovement(MovementPosition::UpperLimit, TONEARM_LIFT_SPEED);
+  if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_UPPER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
+    setErrorState(ErrorCode::VerticalPickupError);
 
-  performTonearmMovement(MovementPosition::PlayPosition, TONEARM_HORIZONTAL_SPEED);
+  if(!moveTonearmToSensor(MotorAxis::Horizontal, HORIZONTAL_PLAY_SENSOR, 8, PLAY_TIMEOUT_STEPS))
+    setErrorState(ErrorCode::PlayError);
 
-  performTonearmMovement(MovementPosition::LowerLimit, TONEARM_DOWN_SPEED);
+  if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_LOWER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
+    setErrorState(ErrorCode::VerticalHomeError);
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
 }
 
-// Performs the tonearm movement, whether that be vertical or horizontal.
-void performTonearmMovement(MovementPosition destination, int speed) {
-
-    // We always want to make sure the vertical step count starts at 0 so there aren't leftover steps
-    // from a previous function and the turntable is set to an error state early.
+// Moves the tonearm to a specified destination.
+bool moveTonearmToSensor(MotorAxis axis, int destinationSensor, int speed, int timeout) {
     movementStepCount = 0;
+    currentSensorStatus = digitalRead(destinationSensor); 
+    movementDirection = 1;
 
-    switch(destination) {
-
-      case MovementPosition::LowerLimit:
-        VerticalTonearmMotor.setSpeed(speed);
-        while(!digitalRead(VERTICAL_HOME_LIMIT))
-        {
-          VerticalTonearmMotor.step(-1);
-
-          // If the limit switch isn't hit in the expected time, or the wrong limit switch is hit, error the turntable.
-          if(movementStepCount++ >= PAUSE_TIMEOUT_STEPS || (digitalRead(VERTICAL_PICKUP_LIMIT) && movementStepCount > STEPS_TO_RELIEVE_LIMIT)) {
-            setErrorState(ErrorCode::VerticalHomeError);
-          }
-        }
-        releaseCurrentFromMotor(MotorAxis::Vertical);
-        break;
-
-      case MovementPosition::UpperLimit:
-        VerticalTonearmMotor.setSpeed(speed);
-        while(!digitalRead(VERTICAL_PICKUP_LIMIT)) {
-          VerticalTonearmMotor.step(1);
-          
-          // If the limit switch isn't hit in the expected time, or the wrong limit switch is hit, error the turntable.
-          if(movementStepCount++ >= PAUSE_TIMEOUT_STEPS || (digitalRead(VERTICAL_HOME_LIMIT) && movementStepCount > STEPS_TO_RELIEVE_LIMIT)) {
-            setErrorState(ErrorCode::VerticalPickupError);
-          }
-        }
-        releaseCurrentFromMotor(MotorAxis::Vertical);
-        break;
-
-      case MovementPosition::PlayPosition:
-        digitalWrite(HORIZONTAL_GEARING_SOLENOID, HIGH);
-        HorizontalTonearmMotor.setSpeed(speed);
-
-        int movementDirection = 1;
-        bool currentSensorStatus = digitalRead(HORIZONTAL_PLAY_SENSOR);
-        if(currentSensorStatus) movementDirection = -1; // TODO: Verify this direction is correct
-
-        // Keep moving until the sensor is the opposite of what it started at
-        while(digitalRead(HORIZONTAL_PLAY_SENSOR) == currentSensorStatus) {
-          HorizontalTonearmMotor.step(movementDirection);
-
-          // If the sensor isn't hit in the expected time, error the turntable.
-          if(movementStepCount++ >= PLAY_TIMEOUT_STEPS) {
-            setErrorState(ErrorCode::PlayError);
-          }
-        }
-        
-        releaseCurrentFromMotor(MotorAxis::Horizontal);
-        break;
-
-      case MovementPosition::HomePosition:
-        digitalWrite(HORIZONTAL_GEARING_SOLENOID, HIGH);
-        HorizontalTonearmMotor.setSpeed(speed);
-
-        int movementDirection = 1;
-        bool currentSensorStatus = digitalRead(HORIZONTAL_HOME_SENSOR);
-        if(currentSensorStatus) movementDirection = -1; // TODO: Verify this direction is correct
-
-        // Keep moving until the sensor is the opposite of what it started at
-        while(digitalRead(HORIZONTAL_HOME_SENSOR) == currentSensorStatus) {
-          HorizontalTonearmMotor.step(movementDirection);
-
-          // If the sensor isn't hit in the expected time, error the turntable.
-          if(movementStepCount++ >= HOME_TIMEOUT_STEPS) {
-            setErrorState(ErrorCode::HorizontalHomeError);
-          }
-        }
-
-        releaseCurrentFromMotor(MotorAxis::Horizontal);
-        break;
+    if(axis == MotorAxis::Horizontal) {
+      digitalWrite(HORIZONTAL_GEARING_SOLENOID, HIGH);
+      HorizontalTonearmMotor.setSpeed(speed);
     }
+    else {
+      VerticalTonearmMotor.setSpeed(speed);
+
+      // To move to the lower limit, it must move down (in the negative direction)
+      if(destinationSensor == VERTICAL_LOWER_LIMIT) 
+        movementDirection = -1;
+    }
+
+    if(currentSensorStatus) 
+      movementDirection *= -1;
+
+
+    // Keep moving until the sensor is the opposite of what it started at
+    while(digitalRead(destinationSensor) == currentSensorStatus) {
+
+      if(axis == MotorAxis::Horizontal) {
+        HorizontalTonearmMotor.step(movementDirection);
+      }
+      else {
+        VerticalTonearmMotor.step(movementDirection);
+      }
+
+      // If the sensor isn't hit in the expected time, the movement failed.
+      if(movementStepCount++ >= timeout) {
+        releaseCurrentFromMotors();
+        return false;
+      }
+    }
+    
+    releaseCurrentFromMotors();
+
+    return true;
 }
 
-// This is used to release current from one or both motors so they aren't drawing power when not in use.
-void releaseCurrentFromMotor(MotorAxis axis) {
-
-  if(axis == MotorAxis::Vertical || axis == MotorAxis::VerticalAndHorizontal) {
+// This is used to release current from both motors so they aren't drawing power when not in use.
+void releaseCurrentFromMotors() {
     digitalWrite(STEPPER_VERTICAL_PIN1, LOW);
     digitalWrite(STEPPER_VERTICAL_PIN2, LOW);
     digitalWrite(STEPPER_VERTICAL_PIN3, LOW);
     digitalWrite(STEPPER_VERTICAL_PIN4, LOW);
-  }
 
-  if(axis == MotorAxis::Horizontal || axis == MotorAxis::VerticalAndHorizontal) {
     digitalWrite(STEPPER_HORIZONTAL_PIN1, LOW);
     digitalWrite(STEPPER_HORIZONTAL_PIN2, LOW);
     digitalWrite(STEPPER_HORIZONTAL_PIN3, LOW);
     digitalWrite(STEPPER_HORIZONTAL_PIN4, LOW);
+
     digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
-  }
 }
 
 // This stops all movement and sets the turntable in an error state to prevent damage.
 // This will be called if a motor stall has been detected.
 // The user will have to restart the turntable if this occurs.
 void setErrorState(ErrorCode errorCode) {
-
-  // Turn off all motors and LEDs.
-  releaseCurrentFromMotor(MotorAxis::VerticalAndHorizontal);
   digitalWrite(PAUSE_STATUS_LED, LOW);
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
 
