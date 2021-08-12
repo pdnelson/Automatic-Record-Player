@@ -65,10 +65,18 @@ Note: Due to limitations, I had to use some of the analog lines for digital valu
 ## Electrical parts
 - Arduino Uno
 - Mean well RS-15-5 5V 3A power supply
+- 1x ADA2776 5v solenoid
 - 2x 28BYJ-48 stepper motors
 - 2x ULN2003 stepper motor drivers
-- 3x slotted optical sensors
-- 2x limit switches (I got them out of some computer mice...)
+- 4x slotted optical sensors
+- 2x micro limit switches
+- breadboards (as many as you need)
+- 2x LED lights (any color; these are to indicate movement and pause)
+- 26 AWG stranded wire
+- 3x blue cherry mx Mechanical Keyswitch
+- 1x HYEJET-01 motor
+- 2x 1N4007 diodes
+- 2x TIP120 transistors
 
 ## Mechanical parts
 - 1x 3/16" steel rods, 5" long
@@ -82,4 +90,3 @@ Note: Due to limitations, I had to use some of the analog lines for digital valu
 ## Miscellaneous parts
 - 10x10mm heat sinks
 - Thermal paste
-- 3x blue cherry mx Mechanical Keyswitch 
