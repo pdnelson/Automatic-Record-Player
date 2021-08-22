@@ -57,8 +57,8 @@ Stepper HorizontalTonearmMotor = Stepper(STEPS_PER_REVOLUTION, STEPPER_HORIZONTA
 // These are timeouts used for error checking, so the hardware doesn't damage itself.
 // Essentially, if the steps exceed this number and the motor has not yet reached its
 // destination, an error has occurred.
-#define PLAY_TIMEOUT_STEPS 50
-#define HOME_TIMEOUT_STEPS 50 // TODO: Determine values for these fields.
+#define PLAY_TIMEOUT_STEPS 1000
+#define HOME_TIMEOUT_STEPS 1000 // TODO: Determine values for these fields.
 #define VERTICAL_TIMEOUT_STEPS 1000 // Number of steps until a vertical movement should time out.
 #define STEPS_TO_RELIEVE_LIMIT 250 // Number of steps it takes to un-click a limit switch.
 
@@ -115,7 +115,7 @@ void loop() {
     pauseAndWaitUntilUnpaused();
   }
 
-  if(digitalRead(HOME_BUTTON) || !digitalRead(HORIZONTAL_PICKUP_SENSOR)) {
+  if(digitalRead(HOME_BUTTON) || (!digitalRead(HORIZONTAL_PICKUP_SENSOR) && digitalRead(AUTO_OR_MANUAL_SWITCH))) {
     homeTonearm();
   }
 }
