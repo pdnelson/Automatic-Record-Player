@@ -115,7 +115,7 @@ void loop() {
     pauseAndWaitUntilUnpaused();
   }
 
-  if(digitalRead(HOME_BUTTON) || digitalRead(HORIZONTAL_PICKUP_SENSOR)) {
+  if(digitalRead(HOME_BUTTON) || !digitalRead(HORIZONTAL_PICKUP_SENSOR)) {
     homeTonearm();
   }
 }
