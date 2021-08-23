@@ -173,7 +173,7 @@ void playRoutine() {
 bool moveTonearmToSensor(MotorAxis axis, int destinationSensor, int speed, int timeout) {
     movementStepCount = 0;
     currentSensorStatus = digitalRead(destinationSensor); 
-    movementDirection = 1;
+    movementDirection = -1;
 
     if(axis == MotorAxis::Horizontal) {
       digitalWrite(HORIZONTAL_GEARING_SOLENOID, HIGH);
@@ -182,9 +182,9 @@ bool moveTonearmToSensor(MotorAxis axis, int destinationSensor, int speed, int t
     else {
       VerticalTonearmMotor.setSpeed(speed);
 
-      // To move to the lower limit, it must move down (in the negative direction)
-      if(destinationSensor == VERTICAL_LOWER_LIMIT) 
-        movementDirection = -1;
+      // To move to the upper limit, it must move up (in the positive direction)
+      if(destinationSensor == VERTICAL_UPPER_LIMIT) 
+        movementDirection = 1;
     }
 
     if(currentSensorStatus) 
