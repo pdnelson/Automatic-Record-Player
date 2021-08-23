@@ -87,6 +87,9 @@ Note: Due to limitations, I had to use some of the analog lines for digital valu
 - a few more screws; 4-40 threading, 0.183" diameter head, 3/8" long
 - many square nuts; 4-40 threading, 1/4" diameter, 3/32" thick
 - washers; 18-8 Stainless Steel Washer for Number 10 Screw Size, 0.203" ID, 0.438" OD
+- yet more screws; 2-56 threading, 1/2" long
+- 5x5mm square nuts; 2-56 threading
+- washers for no. 2 screw size, 0.094" inner diameter
 
 ## Miscellaneous parts
 - 10x10mm heat sinks
