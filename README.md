@@ -81,8 +81,7 @@ Note: Due to limitations, I had to use some of the analog lines for digital valu
 ## Mechanical parts
 - 1x 3/16" steel rods, 5" long
 - 1x 3/16" steel rods, 4" long
-- 1x 3/16" steel rods, 3" long
-- 4x 3/16" sleeve bearings
+- 1x 1.8"x1.8" key stock, ~3" long
 - many screws; 4-40 threading, 0.183" diameter head, 1/4" long
 - a few more screws; 4-40 threading, 0.183" diameter head, 3/8" long
 - many square nuts; 4-40 threading, 1/4" diameter, 3/32" thick
