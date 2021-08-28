@@ -6,23 +6,22 @@
 
 // The vertical stepper motor controls the up and down movements of the tonearm, such as lifting the stylus off of the 
 // record or setting it down.
-#define STEPPER_VERTICAL_PIN1 0
-#define STEPPER_VERTICAL_PIN2 1
-#define STEPPER_VERTICAL_PIN3 2
-#define STEPPER_VERTICAL_PIN4 3
+#define STEPPER_VERTICAL_PIN1 1
+#define STEPPER_VERTICAL_PIN2 2
+#define STEPPER_VERTICAL_PIN3 3
+#define STEPPER_VERTICAL_PIN4 4
 Stepper VerticalTonearmMotor = Stepper(STEPS_PER_REVOLUTION, STEPPER_VERTICAL_PIN1, STEPPER_VERTICAL_PIN3, STEPPER_VERTICAL_PIN2, STEPPER_VERTICAL_PIN4);
 
 // The horizontal stepper motor controls the left and right movements of the tonearm, such as positioning it at a
 // horizontal axis so the vertical movement can place the tonearm at the correct location.
-#define STEPPER_HORIZONTAL_PIN1 4
-#define STEPPER_HORIZONTAL_PIN2 5
-#define STEPPER_HORIZONTAL_PIN3 6
-#define STEPPER_HORIZONTAL_PIN4 7
+#define STEPPER_HORIZONTAL_PIN1 5
+#define STEPPER_HORIZONTAL_PIN2 6
+#define STEPPER_HORIZONTAL_PIN3 7
+#define STEPPER_HORIZONTAL_PIN4 8
 Stepper HorizontalTonearmMotor = Stepper(STEPS_PER_REVOLUTION, STEPPER_HORIZONTAL_PIN1, STEPPER_HORIZONTAL_PIN3, STEPPER_HORIZONTAL_PIN2, STEPPER_HORIZONTAL_PIN4);
 
 // Buttons that the user can press to execute certain movements.
-#define HOME_BUTTON 8
-#define PLAY_BUTTON 10
+#define PLAY_HOME_BUTTON 10
 #define PAUSE_BUTTON 12
 
 // Indicator lights so we can tell what the turntable is currently doing.
@@ -83,8 +82,7 @@ void setup() {
   pinMode(STEPPER_HORIZONTAL_PIN4, OUTPUT);
   HorizontalTonearmMotor.setSpeed(MOVEMENT_RPM);
   
-  pinMode(HOME_BUTTON, INPUT);
-  pinMode(PLAY_BUTTON, INPUT);
+  pinMode(PLAY_HOME_BUTTON, INPUT);
   pinMode(PAUSE_BUTTON, INPUT);
 
   pinMode(MOVEMENT_STATUS_LED, OUTPUT);
@@ -107,16 +105,16 @@ void setup() {
 // This sits and waits for any of the command buttons to be pressed.
 // As soon as a button is pressed, the corresponding command routine is executed.
 void loop() {
-  if(digitalRead(PLAY_BUTTON)) {
-    playRoutine();
-  }
-
   if(digitalRead(PAUSE_BUTTON)) {
     pauseAndWaitUntilUnpaused();
   }
+  
+  if(digitalRead(PLAY_HOME_BUTTON) || (!digitalRead(HORIZONTAL_PICKUP_SENSOR) && digitalRead(AUTO_OR_MANUAL_SWITCH))) {
 
-  if(digitalRead(HOME_BUTTON) || (!digitalRead(HORIZONTAL_PICKUP_SENSOR) && digitalRead(AUTO_OR_MANUAL_SWITCH))) {
-    homeTonearm();
+    // If the tonearm is past the location of the play sensor, then this button will home it. Otherwise, it will execute
+    // the play routine.
+    if(digitalRead(HORIZONTAL_PLAY_SENSOR)) playRoutine();
+    else homeTonearm();
   }
 }
 
