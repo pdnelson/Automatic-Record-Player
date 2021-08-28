@@ -203,6 +203,7 @@ bool moveTonearmToSensor(MotorAxis axis, int destinationSensor, int speed, int t
 
       // If the sensor isn't hit in the expected time, the movement failed.
       if(movementStepCount++ >= timeout) {
+        // TO DO: Push the motor a few steps in the opposite direction to un-lock the gears
         releaseCurrentFromMotors();
         return false;
       }
