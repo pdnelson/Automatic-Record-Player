@@ -18,21 +18,18 @@ The layout is yet to be designed, but a very general prototype can be seen in Fi
 Figure 1. Prototype layout of the turntable.
 
 # Inputs and routines
-The user has a total of four inputs they can use, each triggering their own functions. Most of these functions must be initiated by the user by either pressing a button or flipping a switch, though homing can also be done automatically, which will be explained in more detail later on. Routine interrupt is currently not planned. This means that while one routine is running, none of the others can be executed for the duration of the currently-running routine.
+The user has a total of four inputs they can use. Most of these functions must be initiated by the user by either pressing a button or flipping a switch, though homing can also be done automatically, which will be explained in more detail later on. Routine interrupt is currently not planned. This means that while one routine is running, none of the others can be executed for the duration of the currently-running routine.
 
 ## Automatic/manual switch
 This is a 3-way switch with the center position being "off." Flipping the switch to the "up" position will set the turntable to automatic, while "down" will set it to manual. The turntable will automatically be homed upon flipping the switch to "automatic." Flipping it to "manual" will home the vertical axis, which will set the tonearm down in place where it currently is. The reason for this inclusion is to account for us not knowing what position the tonearm will be in when the device is turned on.
 
 As soon as this switch is flipped to "manual" or "automatic," the software setup procedure begins.
 
-## Play button
-The "play" button will pick the tonearm up from any point, and drop it at the beginning of a record. This will work using a slotted optical sensor that denotes the "play" position. If either the pick-up or play sensors are "high," then the tonearm will move left to find the edge of the record, otherwise it will move right.
+## Play/Home button
+The "play/home" button will pick the tonearm up from any point, and either drop it at the beginning of a record, or at the home position. If the tonearm is past the play position (i.e. on a record), then the button will home the tonearm. Otherwise, the button will drop it at the beginning of a record. These positions are determined using a slotted optical sensor.
 
 ## Pause button
 The pause button will lift the tonearm up until the pause limit switch becomes "high." When the pause button is pressed again, the tonearm will be gently set down on the record.
-
-## Home button
-The "home" button will pick the tonearm up from any point, and drop it in its home position. This routine is also automatically called at the end of a record, when the "pick-up" sensor is set "high" and the turntable is set to "automatic."
 
 # Current pin usage
 - Digital
