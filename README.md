@@ -36,15 +36,15 @@ The "home" button will pick the tonearm up from any point, and drop it in its ho
 
 # Current pin usage
 - Digital
-  - 0: Vertical stepper motor pin 1
-  - 1: Vertical stepper motor pin 2
-  - 2: Vertical stepper motor pin 3
-  - 3: Vertical stepper motor pin 4
-  - 4: Horizontal stepper motor pin 1
-  - 5: Horizontal stepper motor pin 2
-  - 6: Horizontal stepper motor pin 3
-  - 7: Horizontal stepper motor pin 4
-  - 8: Home button
+  - 0: UNUSED
+  - 1: Vertical stepper motor pin 1
+  - 2: Vertical stepper motor pin 2
+  - 3: Vertical stepper motor pin 3
+  - 4: Vertical stepper motor pin 4
+  - 5: Horizontal stepper motor pin 1
+  - 6: Horizontal stepper motor pin 2
+  - 7: Horizontal stepper motor pin 3
+  - 8: Horizontal stepper motor pin 4
   - 9: Horizontal gearing solenoid
   - 10: Play button
   - 11: Movement status LED
