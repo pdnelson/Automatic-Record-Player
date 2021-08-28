@@ -46,7 +46,7 @@ The "home" button will pick the tonearm up from any point, and drop it in its ho
   - 7: Horizontal stepper motor pin 3
   - 8: Horizontal stepper motor pin 4
   - 9: Horizontal gearing solenoid
-  - 10: Play button
+  - 10: Play/Home button
   - 11: Movement status LED
   - 12: Pause button
   - 13: Pause status LED
