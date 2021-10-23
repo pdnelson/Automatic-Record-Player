@@ -124,7 +124,7 @@ void homeTonearm() {
   if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_UPPER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
     setErrorState(ErrorCode::VerticalPickupError);
 
-  if(!moveTonearmToSensor(MotorAxis::Horizontal, HORIZONTAL_HOME_SENSOR, 8, HOME_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Horizontal, HORIZONTAL_HOME_SENSOR, 6, HOME_TIMEOUT_STEPS))
     setErrorState(ErrorCode::HorizontalHomeError);
 
   if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_LOWER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
@@ -158,7 +158,7 @@ void playRoutine() {
   if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_UPPER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
     setErrorState(ErrorCode::VerticalPickupError);
 
-  if(!moveTonearmToSensor(MotorAxis::Horizontal, HORIZONTAL_PLAY_SENSOR, 8, PLAY_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Horizontal, HORIZONTAL_PLAY_SENSOR, 6, PLAY_TIMEOUT_STEPS))
     setErrorState(ErrorCode::PlayError);
 
   if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_LOWER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
@@ -203,11 +203,18 @@ bool moveTonearmToSensor(MotorAxis axis, int destinationSensor, int speed, int t
       if(movementStepCount++ >= timeout) {
         // TO DO: Push the motor a few steps in the opposite direction to un-lock the gears
         releaseCurrentFromMotors();
+        digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
         return false;
       }
     }
     
     releaseCurrentFromMotors();
+
+    // If it is a horizontal movement, make sure all movement has ceased before releasing the horizontal solenoid
+    if(axis == MotorAxis::Horizontal) {
+      delay(500);
+      digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
+    }
 
     return true;
 }
@@ -223,8 +230,6 @@ void releaseCurrentFromMotors() {
     digitalWrite(STEPPER_HORIZONTAL_PIN2, LOW);
     digitalWrite(STEPPER_HORIZONTAL_PIN3, LOW);
     digitalWrite(STEPPER_HORIZONTAL_PIN4, LOW);
-
-    digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
 }
 
 // This stops all movement and sets the turntable in an error state to prevent damage.
