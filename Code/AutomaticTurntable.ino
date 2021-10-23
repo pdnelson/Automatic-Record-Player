@@ -90,8 +90,8 @@ void setup() {
 
   pinMode(HORIZONTAL_GEARING_SOLENOID, OUTPUT);
 
-  // If the turntable is turned on to "automatic," then home the whole tonearm.
-  if(digitalRead(AUTO_OR_MANUAL_SWITCH)) {
+  // If the turntable is turned on to "automatic," then home the whole tonearm if it is not already home.
+  if(digitalRead(AUTO_OR_MANUAL_SWITCH) && !digitalRead(HORIZONTAL_HOME_SENSOR)) {
     homeTonearm();
   }
 
@@ -124,7 +124,7 @@ void homeTonearm() {
   if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_UPPER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
     setErrorState(ErrorCode::VerticalPickupError);
 
-  if(!moveTonearmToSensor(MotorAxis::Horizontal, HORIZONTAL_HOME_SENSOR, 6, HOME_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Horizontal, HORIZONTAL_HOME_SENSOR, 7, HOME_TIMEOUT_STEPS))
     setErrorState(ErrorCode::HorizontalHomeError);
 
   if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_LOWER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
@@ -158,7 +158,7 @@ void playRoutine() {
   if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_UPPER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
     setErrorState(ErrorCode::VerticalPickupError);
 
-  if(!moveTonearmToSensor(MotorAxis::Horizontal, HORIZONTAL_PLAY_SENSOR, 6, PLAY_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Horizontal, HORIZONTAL_PLAY_SENSOR, 4, PLAY_TIMEOUT_STEPS))
     setErrorState(ErrorCode::PlayError);
 
   if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_LOWER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
