@@ -34,27 +34,37 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
 # Current pin usage
 - Digital
   - 0: UNUSED
-  - 1: Vertical stepper motor pin 1
-  - 2: Vertical stepper motor pin 2
-  - 3: Vertical stepper motor pin 3
-  - 4: Vertical stepper motor pin 4
-  - 5: Horizontal stepper motor pin 1
-  - 6: Horizontal stepper motor pin 2
-  - 7: Horizontal stepper motor pin 3
-  - 8: Horizontal stepper motor pin 4
-  - 9: Horizontal gearing solenoid
-  - 10: Play/Home button
+  - 1: UNUSED
+  - 2: Vertical stepper motor pin 1
+  - 3: Vertical stepper motor pin 2
+  - 4: Vertical stepper motor pin 3
+  - 5: Vertical stepper motor pin 4
+  - 6: Horizontal stepper motor pin 1
+  - 7: Horizontal stepper motor pin 2
+  - 8: Horizontal stepper motor pin 3
+  - 9: Horizontal stepper motor pin 4
+  - 10: Horizontal gearing solenoid
   - 11: Movement status LED
-  - 12: Pause button
-  - 13: Pause status LED
+  - 12: Pause status LED
+  - 13: UNUSED
 
 - Analog
-  - A0: Vertical upper (pause) sensor
-  - A1: Vertical stepper lower (home) limit
-  - A2: Horizontal home limit switch
-  - A3: Horizontal "play" optical sensor (technically could be removed in favor of step count)
-  - A4: Horizontal "pick up" optical sensor
-  - A5: On - Auto/Manual
+  - A0: Input Multiplexer 1 Selector A
+  - A1: Input Multiplexer 1 Selector B
+  - A2: Input Multiplexer 1 Selector C
+  - A3: UNUSED
+  - A4: UNUSED
+  - A5: UNUSED
+
+- Input Multiplexer 1
+  - IN 0: Play/Home button
+  - IN 1: Pause button
+  - IN 2: Vertical upper (pause) limit
+  - IN 3: Vertical lower (home) limit
+  - IN 4: Horizontal "home" optical sensor
+  - IN 5: Horizontal "play" optical sensor
+  - IN 6: Horizontal "pickup" optical sensor
+  - IN 7: Auto/Manual mode switch
 
 Note: Due to limitations, I had to use some of the analog lines for digital values.
 
@@ -74,6 +84,7 @@ Note: Due to limitations, I had to use some of the analog lines for digital valu
 - 1x HYEJET-01 motor
 - 2x 1N4007 diodes
 - 2x TIP120 transistors
+- 1x CD4051BE multiplexer
 
 ## Mechanical parts
 - 1x 3/16" steel rods, 5" long
