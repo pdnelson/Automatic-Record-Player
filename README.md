@@ -46,17 +46,17 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
   - 10: Horizontal gearing solenoid
   - 11: Movement status LED
   - 12: Pause status LED
-  - 13: UNUSED
+  - 13: Multiplexer output
 
 - Analog
-  - A0: Input Multiplexer 1 Selector A
-  - A1: Input Multiplexer 1 Selector B
-  - A2: Input Multiplexer 1 Selector C
+  - A0: Input Multiplexer Selector A
+  - A1: Input Multiplexer Selector B
+  - A2: Input Multiplexer Selector C
   - A3: UNUSED
   - A4: UNUSED
   - A5: UNUSED
 
-- Input Multiplexer 1
+- Input Multiplexer
   - IN 0: Play/Home button
   - IN 1: Pause button
   - IN 2: Vertical upper (pause) limit
