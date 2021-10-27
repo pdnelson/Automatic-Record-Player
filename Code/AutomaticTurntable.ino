@@ -1,53 +1,44 @@
 #include <Stepper.h>
+#include <Multiplexer.h>
+#include "MultiplexerInput.h"
 #include "ErrorCode.h"
 #include "MotorAxis.h"
+
+#define SERIAL_SPEED 115200
 
 #define STEPS_PER_REVOLUTION 2048
 
 // The vertical stepper motor controls the up and down movements of the tonearm, such as lifting the stylus off of the 
 // record or setting it down.
-#define STEPPER_VERTICAL_PIN1 1
-#define STEPPER_VERTICAL_PIN2 2
-#define STEPPER_VERTICAL_PIN3 3
-#define STEPPER_VERTICAL_PIN4 4
+#define STEPPER_VERTICAL_PIN1 2
+#define STEPPER_VERTICAL_PIN2 3
+#define STEPPER_VERTICAL_PIN3 4
+#define STEPPER_VERTICAL_PIN4 5
 Stepper VerticalTonearmMotor = Stepper(STEPS_PER_REVOLUTION, STEPPER_VERTICAL_PIN1, STEPPER_VERTICAL_PIN3, STEPPER_VERTICAL_PIN2, STEPPER_VERTICAL_PIN4);
 
 // The horizontal stepper motor controls the left and right movements of the tonearm, such as positioning it at a
 // horizontal axis so the vertical movement can place the tonearm at the correct location.
-#define STEPPER_HORIZONTAL_PIN1 5
-#define STEPPER_HORIZONTAL_PIN2 6
-#define STEPPER_HORIZONTAL_PIN3 7
-#define STEPPER_HORIZONTAL_PIN4 8
+#define STEPPER_HORIZONTAL_PIN1 6
+#define STEPPER_HORIZONTAL_PIN2 7
+#define STEPPER_HORIZONTAL_PIN3 8
+#define STEPPER_HORIZONTAL_PIN4 9
 Stepper HorizontalTonearmMotor = Stepper(STEPS_PER_REVOLUTION, STEPPER_HORIZONTAL_PIN1, STEPPER_HORIZONTAL_PIN3, STEPPER_HORIZONTAL_PIN2, STEPPER_HORIZONTAL_PIN4);
-
-// Buttons that the user can press to execute certain movements.
-#define PLAY_HOME_BUTTON 10
-#define PAUSE_BUTTON 12
-
-// Indicator lights so we can tell what the turntable is currently doing.
-#define MOVEMENT_STATUS_LED 11
-#define PAUSE_STATUS_LED 13
-
-// Positioning sensors for the vertical tonearm movement. The lower limit switch designates "home" for the tonearm's vertical position.
-// The upper sensor is the "pause" position, and will allow the tonearm to go higher to engage with the gearing that moves horizontally.
-#define VERTICAL_UPPER_LIMIT A0
-#define VERTICAL_LOWER_LIMIT A1
-
-// Positioning sensors for the horizontal tonearm movement. Each one represents a different point that the horizontal tonearm could be in,
-// and will allow the various funcrtions to move it in the correct direction depending on where it currently is.
-#define HORIZONTAL_HOME_SENSOR A2 // Tells the tonearm where "home" is horizontally.
-#define HORIZONTAL_PLAY_SENSOR A3 // Tells the tonearm where to drop the stylus down on the record.
-#define HORIZONTAL_PICKUP_SENSOR A4 // Tells the tonearm where the end of the record is.
 
 // This is used to engage the horizontal gears for movement. This is needed so that the gears aren't engaged
 // when a record is playing or any other times, otherwise the record would not be able to move the tonearm
 // very well...
-#define HORIZONTAL_GEARING_SOLENOID 9
+#define HORIZONTAL_GEARING_SOLENOID 10
 
-// This tells us whether the user flipped the 3-way switch to "automatic" or "manual."
-// Automatic will automatically home the turntable at the end of the record, while manual
-// will not. Even with manual selected, the "home," "pause" and "play" buttons will still work.
-#define AUTO_OR_MANUAL_SWITCH A5 // Auto = high; manual = low
+// Indicator lights so we can tell what the turntable is currently doing.
+#define MOVEMENT_STATUS_LED 11
+#define PAUSE_STATUS_LED 12
+
+// These are the selector pins for the multiplexer that is used to handle all inputs.
+#define MUX_OUTPUT 13
+#define MUX_SELECTOR_A A0
+#define MUX_SELECTOR_B A1
+#define MUX_SELECTOR_C A2
+Multiplexer mux = Multiplexer(MUX_OUTPUT, MUX_SELECTOR_A, MUX_SELECTOR_B, MUX_SELECTOR_C);
 
 // The motors used in this project are 28BYJ-48 stepper motors, which I've found to cap at 11 RPM 
 // before becoming too unreliable. 8 or 9 I've found to be a good balance for speed and reliability at 5v DC.
@@ -56,48 +47,41 @@ Stepper HorizontalTonearmMotor = Stepper(STEPS_PER_REVOLUTION, STEPPER_HORIZONTA
 // These are timeouts used for error checking, so the hardware doesn't damage itself.
 // Essentially, if the steps exceed this number and the motor has not yet reached its
 // destination, an error has occurred.
-#define PLAY_TIMEOUT_STEPS 1000
-#define HOME_TIMEOUT_STEPS 1000 // TODO: Determine values for these fields.
+#define PLAY_TIMEOUT_STEPS 1500 // Number of steps until movement to the horizontal "play" sensor should time out.
+#define HOME_TIMEOUT_STEPS 1500 // Number of steps until movement to the horizontal "home" sensor should time out.
 #define VERTICAL_TIMEOUT_STEPS 1000 // Number of steps until a vertical movement should time out.
 #define STEPS_TO_RELIEVE_LIMIT 250 // Number of steps it takes to un-click a limit switch.
 
 // Step counts used for error checking. We will have an idea of how many steps a movement should take,
 // so here we are keeping track of those so we know it doesn't exceed the limits defined above.
-int movementStepCount = 0;
+unsigned int movementStepCount = 0;
 
 // Movement variables
-int movementDirection = 0;
+int8_t movementDirection = 0;
 bool currentSensorStatus = false;
 
 void setup() {
-  pinMode(STEPPER_VERTICAL_PIN1, OUTPUT);
-  pinMode(STEPPER_VERTICAL_PIN2, OUTPUT);
-  pinMode(STEPPER_VERTICAL_PIN3, OUTPUT);
-  pinMode(STEPPER_VERTICAL_PIN4, OUTPUT);
+  //Serial.begin(SERIAL_SPEED);
+
   VerticalTonearmMotor.setSpeed(MOVEMENT_RPM);
-  
-  pinMode(STEPPER_HORIZONTAL_PIN1, OUTPUT);
-  pinMode(STEPPER_HORIZONTAL_PIN2, OUTPUT);
-  pinMode(STEPPER_HORIZONTAL_PIN3, OUTPUT);
-  pinMode(STEPPER_HORIZONTAL_PIN4, OUTPUT);
   HorizontalTonearmMotor.setSpeed(MOVEMENT_RPM);
-  
-  pinMode(PLAY_HOME_BUTTON, INPUT);
-  pinMode(PAUSE_BUTTON, INPUT);
+
+  mux.setDelayMicroseconds(10);
+
+  pinMode(HORIZONTAL_GEARING_SOLENOID, OUTPUT);
 
   pinMode(MOVEMENT_STATUS_LED, OUTPUT);
   pinMode(PAUSE_STATUS_LED, OUTPUT);
 
-  pinMode(HORIZONTAL_GEARING_SOLENOID, OUTPUT);
-
   // If the turntable is turned on to "automatic," then home the whole tonearm if it is not already home.
-  if(digitalRead(AUTO_OR_MANUAL_SWITCH) && !digitalRead(HORIZONTAL_HOME_SENSOR)) {
+  if(mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) && 
+    !mux.readDigitalValue(MultiplexerInput::HorizontalHomeOpticalSensor)) {
     homeTonearm();
   }
 
   // Otherwise, we only want to home the vertical axis, which will drop the tonearm in its current location.
   else {
-    if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_LOWER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
+    if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, VERTICAL_TIMEOUT_STEPS))
       setErrorState(ErrorCode::VerticalHomeError);
   }
 }
@@ -105,29 +89,33 @@ void setup() {
 // This sits and waits for any of the command buttons to be pressed.
 // As soon as a button is pressed, the corresponding command routine is executed.
 void loop() {
-  if(digitalRead(PAUSE_BUTTON)) {
+  if(mux.readDigitalValue(MultiplexerInput::PauseButton)) {
     pauseAndWaitUntilUnpaused();
   }
   
-  if(digitalRead(PLAY_HOME_BUTTON) || (!digitalRead(HORIZONTAL_PICKUP_SENSOR) && digitalRead(AUTO_OR_MANUAL_SWITCH))) {
+  if(mux.readDigitalValue(MultiplexerInput::PlayHomeButton) ||
+   (!mux.readDigitalValue(MultiplexerInput::HorizontalPickupOpticalSensor) && 
+     mux.readDigitalValue(MultiplexerInput::AutoManualSwitch))) {
 
     // If the tonearm is past the location of the play sensor, then this button will home it. Otherwise, it will execute
     // the play routine.
-    if(digitalRead(HORIZONTAL_PLAY_SENSOR)) playRoutine();
-    else homeTonearm();
+    if(mux.readDigitalValue(MultiplexerInput::HorizontalPlayOpticalSensor)) 
+      playRoutine();
+    else 
+      homeTonearm();
   }
 }
 
 void homeTonearm() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
-  if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_UPPER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalUpperLimit, 8, VERTICAL_TIMEOUT_STEPS))
     setErrorState(ErrorCode::VerticalPickupError);
 
-  if(!moveTonearmToSensor(MotorAxis::Horizontal, HORIZONTAL_HOME_SENSOR, 7, HOME_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Horizontal, MultiplexerInput::HorizontalHomeOpticalSensor, 7, HOME_TIMEOUT_STEPS))
     setErrorState(ErrorCode::HorizontalHomeError);
 
-  if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_LOWER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, VERTICAL_TIMEOUT_STEPS))
     setErrorState(ErrorCode::VerticalHomeError);
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
@@ -138,15 +126,15 @@ void homeTonearm() {
 void pauseAndWaitUntilUnpaused() {
   digitalWrite(PAUSE_STATUS_LED, HIGH);
 
-  if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_UPPER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalUpperLimit, 8, VERTICAL_TIMEOUT_STEPS))
     setErrorState(ErrorCode::VerticalPickupError);
 
   // Wait for the user to unpause.
-  while(!digitalRead(PAUSE_BUTTON)) {
+  while(!mux.readDigitalValue(MultiplexerInput::PauseButton)) {
     delay(1);
   }
 
-  if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_LOWER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, VERTICAL_TIMEOUT_STEPS))
     setErrorState(ErrorCode::VerticalHomeError);
 
   digitalWrite(PAUSE_STATUS_LED, LOW);
@@ -155,22 +143,22 @@ void pauseAndWaitUntilUnpaused() {
 void playRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
-  if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_UPPER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalUpperLimit, 8, VERTICAL_TIMEOUT_STEPS))
     setErrorState(ErrorCode::VerticalPickupError);
 
-  if(!moveTonearmToSensor(MotorAxis::Horizontal, HORIZONTAL_PLAY_SENSOR, 4, PLAY_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Horizontal, MultiplexerInput::HorizontalPlayOpticalSensor, 4, PLAY_TIMEOUT_STEPS))
     setErrorState(ErrorCode::PlayError);
 
-  if(!moveTonearmToSensor(MotorAxis::Vertical, VERTICAL_LOWER_LIMIT, 8, VERTICAL_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, VERTICAL_TIMEOUT_STEPS))
     setErrorState(ErrorCode::VerticalHomeError);
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
 }
 
 // Moves the tonearm to a specified destination.
-bool moveTonearmToSensor(MotorAxis axis, int destinationSensor, int speed, int timeout) {
+bool moveTonearmToSensor(MotorAxis axis, uint8_t destinationSensor, uint8_t speed, unsigned int timeout) {
     movementStepCount = 0;
-    currentSensorStatus = digitalRead(destinationSensor); 
+    currentSensorStatus = mux.readDigitalValue(destinationSensor); 
     movementDirection = -1;
 
     if(axis == MotorAxis::Horizontal) {
@@ -181,16 +169,15 @@ bool moveTonearmToSensor(MotorAxis axis, int destinationSensor, int speed, int t
       VerticalTonearmMotor.setSpeed(speed);
 
       // To move to the upper limit, it must move up (in the positive direction)
-      if(destinationSensor == VERTICAL_UPPER_LIMIT) 
+      if(destinationSensor == MultiplexerInput::VerticalUpperLimit) 
         movementDirection = 1;
     }
 
     if(currentSensorStatus) 
       movementDirection *= -1;
 
-
     // Keep moving until the sensor is the opposite of what it started at
-    while(digitalRead(destinationSensor) == currentSensorStatus) {
+    while(mux.readDigitalValue(destinationSensor) == currentSensorStatus) {
 
       if(axis == MotorAxis::Horizontal) {
         HorizontalTonearmMotor.step(movementDirection);
