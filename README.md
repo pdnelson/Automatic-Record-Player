@@ -35,14 +35,14 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
 - Digital
   - 0: UNUSED
   - 1: UNUSED
-  - 2: Vertical stepper motor pin 1
-  - 3: Vertical stepper motor pin 2
-  - 4: Vertical stepper motor pin 3
-  - 5: Vertical stepper motor pin 4
-  - 6: Horizontal stepper motor pin 1
-  - 7: Horizontal stepper motor pin 2
-  - 8: Horizontal stepper motor pin 3
-  - 9: Horizontal stepper motor pin 4
+  - 2: Motor Demultiplexer input 0
+  - 3: UNUSED (reserved for possible future PWM usage)
+  - 4: Motor Demultiplexer input 1
+  - 5: UNUSED (reserved for possible future PWM usage)
+  - 6: UNUSED (reserved for possible future PWM usage)
+  - 7: Motor Demultiplexer input 2
+  - 8: Motor Demultiplexer input 3
+  - 9: Motor Demultiplexer select 0, 1, 2, 3
   - 10: Horizontal gearing solenoid
   - 11: Movement status LED
   - 12: Pause status LED
@@ -66,7 +66,15 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
   - IN 6: Horizontal "pickup" optical sensor
   - IN 7: Auto/Manual mode switch
 
-Note: Due to limitations, I had to use some of the analog lines for digital values.
+- Motor Demultiplexer
+  - OUT 0A: Vertical stepper motor pin 1
+  - OUT 0B: Horizontal stepper motor pin 1
+  - OUT 1A: Vertical stepper motor pin 2
+  - OUT 1B: Horizontal stepper motor pin 2
+  - OUT 2A: Vertical stepper motor pin 3
+  - OUT 2B: Horizontal stepper motor pin 3
+  - OUT 3A: Vertical stepper motor pin 4
+  - OUR 3B: Horizontal stepper motor pin 4
 
 # Parts list (so far)
 ## Electrical parts
