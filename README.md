@@ -42,7 +42,7 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
   - 6: UNUSED (reserved for possible future PWM usage)
   - 7: Motor Demultiplexer D3
   - 8: Motor Demultiplexer D4
-  - 9: Motor Demultiplexer select 0, 1, 2, 3
+  - 9: Motor Demultiplexer select (IN1, IN2, IN3 and IN4)
   - 10: Horizontal gearing solenoid
   - 11: Movement status LED
   - 12: Pause status LED
