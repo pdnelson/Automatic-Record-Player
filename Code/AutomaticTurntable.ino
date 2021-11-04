@@ -3,6 +3,7 @@
 #include "MultiplexerInput.h"
 #include "ErrorCode.h"
 #include "MotorAxis.h"
+#include "TonearmMovementDirection.h"
 
 #define SERIAL_SPEED 115200
 
@@ -49,14 +50,14 @@ Multiplexer mux = Multiplexer(MUX_OUTPUT, MUX_SELECTOR_A, MUX_SELECTOR_B, MUX_SE
 
 // Step counts used for error checking. We will have an idea of how many steps a movement should take,
 // so here we are keeping track of those so we know it doesn't exceed the limits defined above.
-unsigned int movementStepCount = 0;
+unsigned int movementStepCount;
 
 // Movement variables
-int8_t movementDirection = 0;
+TonearmMovementDirection movementDirection;
 bool currentSensorStatus = false;
 
 void setup() {
-  //Serial.begin(SERIAL_SPEED);
+  Serial.begin(SERIAL_SPEED);
 
   TonearmMotor.setSpeed(MOVEMENT_RPM);
 
@@ -152,26 +153,26 @@ void playRoutine() {
 }
 
 // Moves the tonearm to a specified destination.
-bool moveTonearmToSensor(MotorAxis axis, uint8_t destinationSensor, uint8_t speed, unsigned int timeout) {
+bool moveTonearmToSensor(MotorAxis axis, MultiplexerInput destinationSensor, uint8_t speed, unsigned int timeout) {
     digitalWrite(MOTOR_AXIS_SELECTOR, axis);
 
     movementStepCount = 0;
     currentSensorStatus = mux.readDigitalValue(destinationSensor); 
-    movementDirection = -1;
 
     TonearmMotor.setSpeed(speed);
 
     if(axis == MotorAxis::Horizontal) {
       digitalWrite(HORIZONTAL_GEARING_SOLENOID, HIGH);
+      movementDirection = currentSensorStatus ? TonearmMovementDirection::Counterclockwise : TonearmMovementDirection::Clockwise;
     }
     else {
-      // To move to the upper limit, it must move up (in the positive direction)
-      if(destinationSensor == MultiplexerInput::VerticalUpperLimit) 
-        movementDirection = 1;
+      // Because the tonearm would have to move in opposite directions to set each limit switch "high," we must tell it to move
+      // up or down depending on the destination sensor.
+      if(destinationSensor == MultiplexerInput::VerticalLowerLimit)
+        movementDirection = currentSensorStatus ? TonearmMovementDirection::Positive : TonearmMovementDirection::Negative;
+      else
+        movementDirection = currentSensorStatus ? TonearmMovementDirection::Negative : TonearmMovementDirection::Positive;
     }
-
-    if(currentSensorStatus) 
-      movementDirection *= -1;
 
     // Keep moving until the sensor is the opposite of what it started at
     while(mux.readDigitalValue(destinationSensor) == currentSensorStatus) {
