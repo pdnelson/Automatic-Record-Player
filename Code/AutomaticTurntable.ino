@@ -8,21 +8,16 @@
 
 #define STEPS_PER_REVOLUTION 2048
 
-// The vertical stepper motor controls the up and down movements of the tonearm, such as lifting the stylus off of the 
-// record or setting it down.
-#define STEPPER_VERTICAL_PIN1 2
-#define STEPPER_VERTICAL_PIN2 3
-#define STEPPER_VERTICAL_PIN3 4
-#define STEPPER_VERTICAL_PIN4 5
-Stepper VerticalTonearmMotor = Stepper(STEPS_PER_REVOLUTION, STEPPER_VERTICAL_PIN1, STEPPER_VERTICAL_PIN3, STEPPER_VERTICAL_PIN2, STEPPER_VERTICAL_PIN4);
+// These motor pins channel into a quad 2-channel demultiplexer, so that either the vertical or horizontal motors receive
+// the voltages. Only one of these motors will ever be moving at once
+#define MOTOR_PIN1 2
+#define MOTOR_PIN2 4
+#define MOTOR_PIN3 7
+#define MOTOR_PIN4 8
+Stepper TonearmMotor = Stepper(STEPS_PER_REVOLUTION, MOTOR_PIN1, MOTOR_PIN3, MOTOR_PIN2, MOTOR_PIN4);
 
-// The horizontal stepper motor controls the left and right movements of the tonearm, such as positioning it at a
-// horizontal axis so the vertical movement can place the tonearm at the correct location.
-#define STEPPER_HORIZONTAL_PIN1 6
-#define STEPPER_HORIZONTAL_PIN2 7
-#define STEPPER_HORIZONTAL_PIN3 8
-#define STEPPER_HORIZONTAL_PIN4 9
-Stepper HorizontalTonearmMotor = Stepper(STEPS_PER_REVOLUTION, STEPPER_HORIZONTAL_PIN1, STEPPER_HORIZONTAL_PIN3, STEPPER_HORIZONTAL_PIN2, STEPPER_HORIZONTAL_PIN4);
+// This is the pin used to select which motor we are moving, using the demultiplexer.
+#define MOTOR_AXIS_SELECTOR 9
 
 // This is used to engage the horizontal gears for movement. This is needed so that the gears aren't engaged
 // when a record is playing or any other times, otherwise the record would not be able to move the tonearm
@@ -63,8 +58,9 @@ bool currentSensorStatus = false;
 void setup() {
   //Serial.begin(SERIAL_SPEED);
 
-  VerticalTonearmMotor.setSpeed(MOVEMENT_RPM);
-  HorizontalTonearmMotor.setSpeed(MOVEMENT_RPM);
+  TonearmMotor.setSpeed(MOVEMENT_RPM);
+
+  pinMode(MOTOR_AXIS_SELECTOR, OUTPUT);
 
   mux.setDelayMicroseconds(10);
 
@@ -157,17 +153,18 @@ void playRoutine() {
 
 // Moves the tonearm to a specified destination.
 bool moveTonearmToSensor(MotorAxis axis, uint8_t destinationSensor, uint8_t speed, unsigned int timeout) {
+    digitalWrite(MOTOR_AXIS_SELECTOR, axis);
+
     movementStepCount = 0;
     currentSensorStatus = mux.readDigitalValue(destinationSensor); 
     movementDirection = -1;
 
+    TonearmMotor.setSpeed(speed);
+
     if(axis == MotorAxis::Horizontal) {
       digitalWrite(HORIZONTAL_GEARING_SOLENOID, HIGH);
-      HorizontalTonearmMotor.setSpeed(speed);
     }
     else {
-      VerticalTonearmMotor.setSpeed(speed);
-
       // To move to the upper limit, it must move up (in the positive direction)
       if(destinationSensor == MultiplexerInput::VerticalUpperLimit) 
         movementDirection = 1;
@@ -178,13 +175,7 @@ bool moveTonearmToSensor(MotorAxis axis, uint8_t destinationSensor, uint8_t spee
 
     // Keep moving until the sensor is the opposite of what it started at
     while(mux.readDigitalValue(destinationSensor) == currentSensorStatus) {
-
-      if(axis == MotorAxis::Horizontal) {
-        HorizontalTonearmMotor.step(movementDirection);
-      }
-      else {
-        VerticalTonearmMotor.step(movementDirection);
-      }
+      TonearmMotor.step(movementDirection);
 
       // If the sensor isn't hit in the expected time, the movement failed.
       if(movementStepCount++ >= timeout) {
@@ -208,15 +199,12 @@ bool moveTonearmToSensor(MotorAxis axis, uint8_t destinationSensor, uint8_t spee
 
 // This is used to release current from both motors so they aren't drawing power when not in use.
 void releaseCurrentFromMotors() {
-    digitalWrite(STEPPER_VERTICAL_PIN1, LOW);
-    digitalWrite(STEPPER_VERTICAL_PIN2, LOW);
-    digitalWrite(STEPPER_VERTICAL_PIN3, LOW);
-    digitalWrite(STEPPER_VERTICAL_PIN4, LOW);
+    digitalWrite(MOTOR_PIN1, LOW);
+    digitalWrite(MOTOR_PIN2, LOW);
+    digitalWrite(MOTOR_PIN3, LOW);
+    digitalWrite(MOTOR_PIN4, LOW);
 
-    digitalWrite(STEPPER_HORIZONTAL_PIN1, LOW);
-    digitalWrite(STEPPER_HORIZONTAL_PIN2, LOW);
-    digitalWrite(STEPPER_HORIZONTAL_PIN3, LOW);
-    digitalWrite(STEPPER_HORIZONTAL_PIN4, LOW);
+    digitalWrite(MOTOR_AXIS_SELECTOR, LOW);
 }
 
 // This stops all movement and sets the turntable in an error state to prevent damage.

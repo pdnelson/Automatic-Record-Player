@@ -2,16 +2,13 @@
 #define MOTORAXIS_H
 
 // One of the motors that adjusts the position of the tonearm.
-enum class MotorAxis {
+enum MotorAxis : uint8_t {
 
     // Motor that controls the vertical tonearm movement.
-    Vertical,
+    Vertical = 0x0,
 
     // Motor that controls the horizontal tonearm movement.
-    Horizontal,
-
-    // Both vertical and horizontal motors that control the tonearm movement.
-    VerticalAndHorizontal
+    Horizontal = 0x1
 };
 
 #endif
