@@ -57,7 +57,7 @@ TonearmMovementDirection movementDirection;
 bool currentSensorStatus = false;
 
 void setup() {
-  Serial.begin(SERIAL_SPEED);
+  // Serial.begin(SERIAL_SPEED);
 
   TonearmMotor.setSpeed(MOVEMENT_RPM);
 
