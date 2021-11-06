@@ -2,7 +2,7 @@
 #define ERRORCODE_H
 
 // Various errors that the turntable could encounter during operation
-enum class ErrorCode {
+enum ErrorCode : uint8_t {
 
     // Took to long to hit the vertical lower (home) limit switch or hit the wrong limit switch
     VerticalHomeError,
@@ -14,7 +14,10 @@ enum class ErrorCode {
     HorizontalHomeError,
 
     // Took too long to find the play position sensor
-    PlayError
+    PlayError,
+
+    // The movement succeeded.
+    Success
 };
 
 #endif

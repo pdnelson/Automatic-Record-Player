@@ -43,23 +43,25 @@ Multiplexer mux = Multiplexer(MUX_OUTPUT, MUX_SELECTOR_A, MUX_SELECTOR_B, MUX_SE
 // These are timeouts used for error checking, so the hardware doesn't damage itself.
 // Essentially, if the steps exceed this number and the motor has not yet reached its
 // destination, an error has occurred.
-#define PLAY_TIMEOUT_STEPS 1500 // Number of steps until movement to the horizontal "play" sensor should time out.
-#define HOME_TIMEOUT_STEPS 1500 // Number of steps until movement to the horizontal "home" sensor should time out.
+#define PLAY_TIMEOUT_STEPS 1000 // Number of steps until movement to the horizontal "play" sensor should time out.
+#define HOME_TIMEOUT_STEPS 1000 // Number of steps until movement to the horizontal "home" sensor should time out.
 #define VERTICAL_TIMEOUT_STEPS 1000 // Number of steps until a vertical movement should time out.
-#define STEPS_TO_RELIEVE_LIMIT 250 // Number of steps it takes to un-click a limit switch.
 
 // Step counts used for error checking. We will have an idea of how many steps a movement should take,
 // so here we are keeping track of those so we know it doesn't exceed the limits defined above.
 unsigned int movementStepCount;
 
-// Movement variables
+// The direction the tonearm is currently moving.
 TonearmMovementDirection movementDirection;
+
+// Whether the current sensor that the tonearm is moving toward is HIGH or LOW.
 bool currentSensorStatus = false;
+
+// Whether the last movement succeeded or failed (and how).
+ErrorCode currentMovementStatus;
 
 void setup() {
   // Serial.begin(SERIAL_SPEED);
-
-  TonearmMotor.setSpeed(MOVEMENT_RPM);
 
   pinMode(MOTOR_AXIS_SELECTOR, OUTPUT);
 
@@ -73,7 +75,11 @@ void setup() {
   // If the turntable is turned on to "automatic," then home the whole tonearm if it is not already home.
   if(mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) && 
     !mux.readDigitalValue(MultiplexerInput::HorizontalHomeOpticalSensor)) {
-    homeTonearm();
+    currentMovementStatus = homeTonearm();
+
+    if(currentMovementStatus != ErrorCode::Success) {
+      setErrorState(currentMovementStatus);
+    }
   }
 
   // Otherwise, we only want to home the vertical axis, which will drop the tonearm in its current location.
@@ -87,7 +93,11 @@ void setup() {
 // As soon as a button is pressed, the corresponding command routine is executed.
 void loop() {
   if(mux.readDigitalValue(MultiplexerInput::PauseButton)) {
-    pauseAndWaitUntilUnpaused();
+    currentMovementStatus = pauseAndWaitUntilUnpaused();
+
+    if(currentMovementStatus != ErrorCode::Success) {
+      setErrorState(currentMovementStatus);
+    }
   }
   
   if(mux.readDigitalValue(MultiplexerInput::PlayHomeButton) ||
@@ -97,59 +107,72 @@ void loop() {
     // If the tonearm is past the location of the play sensor, then this button will home it. Otherwise, it will execute
     // the play routine.
     if(mux.readDigitalValue(MultiplexerInput::HorizontalPlayOpticalSensor)) 
-      playRoutine();
+      currentMovementStatus = playRoutine();
     else 
-      homeTonearm();
+      currentMovementStatus = homeTonearm();
+
+    if(currentMovementStatus != ErrorCode::Success) {
+      setErrorState(currentMovementStatus);
+    }
   }
 }
 
-void homeTonearm() {
+ErrorCode homeTonearm() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
   if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalUpperLimit, 8, VERTICAL_TIMEOUT_STEPS))
-    setErrorState(ErrorCode::VerticalPickupError);
+    return ErrorCode::VerticalPickupError;
 
   if(!moveTonearmToSensor(MotorAxis::Horizontal, MultiplexerInput::HorizontalHomeOpticalSensor, 7, HOME_TIMEOUT_STEPS))
-    setErrorState(ErrorCode::HorizontalHomeError);
+    return ErrorCode::HorizontalHomeError;
 
   if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, VERTICAL_TIMEOUT_STEPS))
-    setErrorState(ErrorCode::VerticalHomeError);
+    return ErrorCode::VerticalHomeError;
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
+
+  return ErrorCode::Success;
 }
 
 // This is the pause routine that will lift up the tonearm from the record until the user "unpauses" by pressing the
 // pause button again
-void pauseAndWaitUntilUnpaused() {
+ErrorCode pauseAndWaitUntilUnpaused() {
   digitalWrite(PAUSE_STATUS_LED, HIGH);
 
-  if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalUpperLimit, 8, VERTICAL_TIMEOUT_STEPS))
-    setErrorState(ErrorCode::VerticalPickupError);
+  // Only "pause" if the tonearm is not already paused.
+  if(!mux.readDigitalValue(MultiplexerInput::VerticalUpperLimit)) {
+    if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalUpperLimit, 8, VERTICAL_TIMEOUT_STEPS))
+      return ErrorCode::VerticalPickupError;
 
-  // Wait for the user to unpause.
-  while(!mux.readDigitalValue(MultiplexerInput::PauseButton)) {
-    delay(1);
+    // Wait for the user to unpause.
+    while(!mux.readDigitalValue(MultiplexerInput::PauseButton)) {
+      delay(1);
+    }
   }
 
   if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, VERTICAL_TIMEOUT_STEPS))
-    setErrorState(ErrorCode::VerticalHomeError);
+    return ErrorCode::VerticalHomeError;
 
   digitalWrite(PAUSE_STATUS_LED, LOW);
+
+  return ErrorCode::Success;
 }
 
-void playRoutine() {
+ErrorCode playRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
   if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalUpperLimit, 8, VERTICAL_TIMEOUT_STEPS))
-    setErrorState(ErrorCode::VerticalPickupError);
+    return ErrorCode::VerticalPickupError;
 
   if(!moveTonearmToSensor(MotorAxis::Horizontal, MultiplexerInput::HorizontalPlayOpticalSensor, 4, PLAY_TIMEOUT_STEPS))
-    setErrorState(ErrorCode::PlayError);
+    return ErrorCode::PlayError;
 
   if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, VERTICAL_TIMEOUT_STEPS))
-    setErrorState(ErrorCode::VerticalHomeError);
+    return ErrorCode::VerticalHomeError;
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
+  
+  return ErrorCode::Success;
 }
 
 // Moves the tonearm to a specified destination.
@@ -220,28 +243,37 @@ void setErrorState(ErrorCode errorCode) {
     // Slow-blink pause LED.
     case ErrorCode::VerticalHomeError:
       blinkLed(PAUSE_STATUS_LED, 1000);
+      break;
 
     // Fast-blink pause LED.
     case ErrorCode::VerticalPickupError:
       blinkLed(PAUSE_STATUS_LED, 150);
+      break;
 
     // Slow-blink movement LED.
     case ErrorCode::HorizontalHomeError:
       blinkLed(MOVEMENT_STATUS_LED, 1000);
+      break;
 
     // Fast-blink movement LED.
     case ErrorCode::PlayError:
       blinkLed(MOVEMENT_STATUS_LED, 150);
+      break;
   }
 }
 
 // Blinks a specific LED indefinitely.
 // For use only with error codes.
 void blinkLed(int led, int interval) {
-  while(true) {
+
+  // Only blink until a button is pressed.
+  // TODO: Make this not require holding the button until the interval has elapsed.
+  while(!mux.readDigitalValue(MultiplexerInput::PauseButton) && !mux.readDigitalValue(MultiplexerInput::PlayHomeButton)) {
     digitalWrite(led, LOW);
     delay(interval);
     digitalWrite(led, HIGH);
     delay(interval);
   }
+
+  digitalWrite(led, LOW);
 }
