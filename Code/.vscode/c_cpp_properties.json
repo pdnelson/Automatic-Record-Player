@@ -19,6 +19,11 @@
                 "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\variants\\standard",
                 "C:\\Program Files (x86)\\Arduino\\libraries\\Stepper\\src",
                 "D:\\Documents\\Arduino\\libraries\\Multiplexer",
+                "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries\\Wire\\src",
+                "D:\\Documents\\Arduino\\libraries\\AdafruitGFX",
+                "D:\\Documents\\Arduino\\libraries\\AdafruitLedBackpack",
+                "D:\\Documents\\Arduino\\libraries\\AdafruitI2CDevice",
+                "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries\\SPI\\src",
                 "c:\\program files (x86)\\arduino\\hardware\\tools\\avr\\lib\\gcc\\avr\\7.3.0\\include",
                 "c:\\program files (x86)\\arduino\\hardware\\tools\\avr\\lib\\gcc\\avr\\7.3.0\\include-fixed",
                 "c:\\program files (x86)\\arduino\\hardware\\tools\\avr\\avr\\include"

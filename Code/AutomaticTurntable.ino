@@ -5,6 +5,11 @@
 #include "MotorAxis.h"
 #include "TonearmMovementDirection.h"
 
+// Used for 7-segment display
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include "Adafruit_LEDBackpack.h"
+
 #define SERIAL_SPEED 115200
 
 #define STEPS_PER_REVOLUTION 2048
@@ -60,8 +65,26 @@ bool currentSensorStatus = false;
 // Whether the last movement succeeded or failed (and how).
 ErrorCode currentMovementStatus;
 
+// All of these fields are used to calculate the speed that the turntable is spinning.
+#define SPEED_SENSOR 3
+Adafruit_7segment speedDisplay = Adafruit_7segment();
+double currSpeed = 0.0;
+double lastSpeed = 0.0;
+unsigned long lastMillis = millis();
+unsigned long currMillis = millis();
+bool lastSpeedSensorStatus;
+bool currSpeedSensorStatus;
+
 void setup() {
-  // Serial.begin(SERIAL_SPEED);
+  //Serial.begin(SERIAL_SPEED);
+
+  speedDisplay.begin(0x70);
+  speedDisplay.print("----");
+  speedDisplay.writeDisplay();
+
+  pinMode(SPEED_SENSOR, INPUT);
+  lastSpeedSensorStatus = digitalRead(SPEED_SENSOR);
+  currSpeedSensorStatus = lastSpeedSensorStatus;
 
   pinMode(MOTOR_AXIS_SELECTOR, OUTPUT);
 
@@ -115,6 +138,8 @@ void loop() {
       setErrorState(currentMovementStatus);
     }
   }
+
+  calculateTurntableSpeed();
 }
 
 ErrorCode homeTonearm() {
@@ -128,6 +153,8 @@ ErrorCode homeTonearm() {
 
   if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, VERTICAL_TIMEOUT_STEPS))
     return ErrorCode::VerticalHomeError;
+
+  unlockHorizontalGears();
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
 
@@ -203,8 +230,7 @@ bool moveTonearmToSensor(MotorAxis axis, MultiplexerInput destinationSensor, uin
 
       // If the sensor isn't hit in the expected time, the movement failed.
       if(movementStepCount++ >= timeout) {
-        // TO DO: Push the motor a few steps in the opposite direction to un-lock the gears
-        releaseCurrentFromMotors();
+        unlockHorizontalGears();
         digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
         return false;
       }
@@ -229,6 +255,46 @@ void releaseCurrentFromMotors() {
     digitalWrite(MOTOR_PIN4, LOW);
 
     digitalWrite(MOTOR_AXIS_SELECTOR, LOW);
+}
+
+// Move the tonearm gears clockwise a few steps to un-lock the gears. This is needed because, occasionally, when moving counter-clockwise
+// the gears will have trouble un-locking from each other after a movement (even after the solenoid has collapsed).
+void unlockHorizontalGears() {
+  movementStepCount = 0;
+  digitalWrite(MOTOR_AXIS_SELECTOR, MotorAxis::Horizontal);
+
+  while(movementStepCount++ < 20) {
+    TonearmMotor.step(MOVEMENT_RPM);
+  }
+
+  releaseCurrentFromMotors();
+}
+
+// This function will calculate the speed of the turntable 8 times per rotation.
+void calculateTurntableSpeed() {
+  currSpeedSensorStatus = digitalRead(SPEED_SENSOR);
+  
+  if(currSpeedSensorStatus != lastSpeedSensorStatus) {
+    currMillis = millis();
+    currSpeed = 60000 / (double)((currMillis - lastMillis) << 3);
+    
+    // Only re-write the display if the display will change
+    if(abs(lastSpeed - currSpeed) > 0.009) {
+      speedDisplay.print(currSpeed, 2);
+      speedDisplay.writeDisplay();
+    }
+
+    lastSpeed = currSpeed;
+    lastMillis = currMillis;
+  }
+
+  // If 1 second elapses without a sensor change, we can assume that the turntable has stopped.
+  else if(millis() - currMillis > 1000) {
+    speedDisplay.print("----");
+    speedDisplay.writeDisplay();
+  }
+
+  lastSpeedSensorStatus = currSpeedSensorStatus;
 }
 
 // This stops all movement and sets the turntable in an error state to prevent damage.
