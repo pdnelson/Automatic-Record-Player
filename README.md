@@ -4,6 +4,7 @@ Some planned features of this turntable include:
 - Stereo RCA outputs for a receiver
 - Able to fit any commercial cartridge
 - 45 and 33-RPM speeds
+  - Speed monitored on 7-segment display
 - Semi-automatic
   - Returns tonearm to "home" position automatically after a record is finished
   - Other buttons that contain other pre-defined routines (play and pause) that the user must initiate
