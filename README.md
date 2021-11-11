@@ -14,7 +14,7 @@ The actual "turntable" part is yet to be designed; right now, I'm just working o
 # Layout
 The layout is yet to be designed, but a very general prototype can be seen in Figure 1.
 
-![image](https://cdn.discordapp.com/attachments/625801308854812684/848020821326037032/20210528_221130.jpg)
+![image](https://cdn.discordapp.com/attachments/625801308854812684/907002677278433371/20211107_145457.jpg)
 Figure 1. Prototype layout of the turntable.
 
 # Inputs and routines
