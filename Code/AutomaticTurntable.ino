@@ -1,10 +1,10 @@
 #include <Stepper.h>
 #include <Multiplexer.h>
-#include "MultiplexerInput.h"
-#include "ErrorCode.h"
-#include "MotorAxis.h"
-#include "TonearmMovementDirection.h"
-#include "AutoManualSwitchPosition.h"
+#include "enums/MultiplexerInput.h"
+#include "enums/ErrorCode.h"
+#include "enums/MotorAxis.h"
+#include "enums/TonearmMovementDirection.h"
+#include "enums/AutoManualSwitchPosition.h"
 
 // Used for 7-segment display
 #include <Wire.h>
@@ -85,7 +85,7 @@ void setup() {
   mux.setDelayMicroseconds(10);
 
   speedDisplay.begin(0x70);
-  speedDisplay.print("----");
+  speedDisplay.print(0.0);
   speedDisplay.writeDisplay();
 
   lastSpeedSensorStatus = mux.readDigitalValue(MultiplexerInput::TurntableSpeedSensor);
@@ -301,9 +301,10 @@ void calculateTurntableSpeed() {
   }
 
   // If 1 second elapses without a sensor change, we can assume that the turntable has stopped.
-  else if(millis() - currMillis > 1000) {
-    speedDisplay.print("----");
+  else if(millis() - currMillis > 1000 && lastSpeed > 0.0) {
+    speedDisplay.print(0.0);
     speedDisplay.writeDisplay();
+    lastSpeed = 0.0;
   }
 
   lastSpeedSensorStatus = currSpeedSensorStatus;
