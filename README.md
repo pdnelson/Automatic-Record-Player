@@ -36,11 +36,11 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
 - Digital
   - 0: UNUSED
   - 1: UNUSED
-  - 2: Motor Demultiplexer D1
+  - 2: Input Multiplexer Selector D
   - 3: UNUSED (reserved for possible future PWM usage)
-  - 4: Motor Demultiplexer D2
+  - 4: Motor Demultiplexer D1
   - 5: UNUSED (reserved for possible future PWM usage)
-  - 6: UNUSED (reserved for possible future PWM usage)
+  - 6: Motor Demultiplexer D2
   - 7: Motor Demultiplexer D3
   - 8: Motor Demultiplexer D4
   - 9: Motor Demultiplexer select (IN1, IN2, IN3 and IN4)
@@ -54,8 +54,8 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
   - A1: Input Multiplexer Selector B
   - A2: Input Multiplexer Selector C
   - A3: UNUSED
-  - A4: UNUSED
-  - A5: UNUSED
+  - A4/SDA: 7-Segment Display Data
+  - A5/SCL: 7-Segment Display Clock
 
 - Input Multiplexer
   - IN 0: Play/Home button
@@ -63,9 +63,17 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
   - IN 2: Vertical upper (pause) limit
   - IN 3: Vertical lower (home) limit
   - IN 4: Horizontal "home" optical sensor
-  - IN 5: Horizontal "play" optical sensor
-  - IN 6: Horizontal "pickup" optical sensor
-  - IN 7: Auto/Manual mode switch
+  - IN 5: Horizontal "play" 7" optical sensor
+  - IN 6: Horizontal "play" 10" optical sensor
+  - IN 7: Horizontal "play" 12" optical sensor
+  - IN 8: Record Size Selector 1
+  - IN 9: Record Size Selector 2
+  - IN 10: Horizontal "pickup" optical sensor
+  - IN 11: Auto/Manual mode switch
+  - IN 12: Turntable speed sensor
+  - IN 13: UNUSED
+  - IN 14: UNUSED
+  - IN 15: UNUSED
 
 - Motor Demultiplexer
   - OUT S1A: Vertical stepper motor pin 1
