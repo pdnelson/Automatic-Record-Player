@@ -105,7 +105,7 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
 - 1x MUX36S16DA 16-channel digital multiplexer
 - 1x ADG333AB quad 2-channel analog demultiplexer
 - [1x 0.056" 7-segment display w/ "backpack"](https://www.adafruit.com/product/879)
-- 10k panel-mount potentiometer (3x for regular size turntable, 1x for only 7")
+- 10k panel-mount linear potentiometer (3x for regular size turntable, 1x for only 7") ([P160KN2-0QA25B10K](https://www.digikey.com/en/products/detail/tt-electronics-bi/P160KN2-0QA25B10K/5957459))
 
 ## Mechanical parts
 - 1x 9/32" diameter steel rod, between 4 and 5" long
