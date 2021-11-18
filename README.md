@@ -34,28 +34,29 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
 
 # Current pin usage
 - Digital
-  - 0: UNUSED
-  - 1: UNUSED
-  - 2: Input Multiplexer Selector D
-  - 3: UNUSED (reserved for possible future PWM usage)
-  - 4: Motor Demultiplexer D1
-  - 5: UNUSED (reserved for possible future PWM usage)
-  - 6: Motor Demultiplexer D2
-  - 7: Motor Demultiplexer D3
-  - 8: Motor Demultiplexer D4
-  - 9: Motor Demultiplexer select (IN1, IN2, IN3 and IN4)
-  - 10: Horizontal gearing solenoid
-  - 11: Movement status LED
-  - 12: Pause status LED
-  - 13: Multiplexer output
+  - D2: Input Multiplexer Selector A
+  - D3: Input Multiplexer Selector B
+  - D4: Input Multiplexer Selector C
+  - D5: Input Multiplexer Selector D
+  - D6: Input Multiplexer Output
+  - D7: Motor Demultiplexer D1
+  - D8: Motor Demultiplexer D2
+  - D9: Motor Demultiplexer D3
+  - D10: Motor Demultiplexer D4
+  - D11: Motor Demultiplexer select (IN1, IN2, IN3 and IN4)
+  - D12: Movement status LED
+  - D13: Pause status LED
+  - D14: Horizontal gearing solenoid
 
 - Analog
-  - A0: Input Multiplexer Selector A
-  - A1: Input Multiplexer Selector B
-  - A2: Input Multiplexer Selector C
-  - A3: UNUSED
-  - A4/SDA: 7-Segment Display Data
-  - A5/SCL: 7-Segment Display Clock
+- A0: 7" position potentiometer
+- A1: 10" position potentiometer
+- A2: 12" position potentiometer
+- A3: homing potentiometer
+- A4/SDA: 7-Segment Display Data
+- A5/SCL: 7-Segment Display Clock
+- A6: Pickup delay potentiometer
+- A7: UNUSED
 
 - Input Multiplexer
   - IN 0: Play/Home button
