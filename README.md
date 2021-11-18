@@ -49,14 +49,14 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
   - D14: Horizontal gearing solenoid
 
 - Analog
-- A0: 7" position potentiometer
-- A1: 10" position potentiometer
-- A2: 12" position potentiometer
-- A3: homing potentiometer
-- A4/SDA: 7-Segment Display Data
-- A5/SCL: 7-Segment Display Clock
-- A6: Pickup delay potentiometer
-- A7: UNUSED
+  - A0: 7" position potentiometer
+  - A1: 10" position potentiometer
+  - A2: 12" position potentiometer
+  - A3: homing potentiometer
+  - A4/SDA: 7-Segment Display Data
+  - A5/SCL: 7-Segment Display Clock
+  - A6: Pickup delay potentiometer
+  - A7: UNUSED
 
 - Input Multiplexer
   - IN 0: Play/Home button
