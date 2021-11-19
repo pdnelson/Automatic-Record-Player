@@ -34,10 +34,10 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
 
 # Current pin usage
 - Digital
-  - D2: Input Multiplexer Selector A
-  - D3: Input Multiplexer Selector B
-  - D4: Input Multiplexer Selector C
-  - D5: Input Multiplexer Selector D
+  - D2: Input Multiplexer Selector A0
+  - D3: Input Multiplexer Selector A1
+  - D4: Input Multiplexer Selector A2
+  - D5: Input Multiplexer Selector A3
   - D6: Input Multiplexer Output
   - D7: Motor Demultiplexer D1
   - D8: Motor Demultiplexer D2
