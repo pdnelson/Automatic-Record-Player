@@ -46,7 +46,6 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
   - D11: Motor Demultiplexer select (IN1, IN2, IN3 and IN4)
   - D12: Movement status LED
   - D13: Pause status LED
-  - D14: Horizontal gearing solenoid
 
 - Analog
   - A0: 7" position potentiometer
@@ -56,7 +55,7 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
   - A4/SDA: 7-Segment Display Data
   - A5/SCL: 7-Segment Display Clock
   - A6: Pickup delay potentiometer
-  - A7: UNUSED
+  - A7: Horizontal gearing solenoid
 
 - Input Multiplexer
   - IN 0: Play/Home button
