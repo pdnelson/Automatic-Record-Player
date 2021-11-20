@@ -101,7 +101,7 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
 - 1x HYEJET-01 motor
 - 2x 1N4007 diodes
 - 2x TIP120 transistors
-- 1x CD4051BE multiplexer
+- 1x MUX36S16DA SOIC multiplexer
 
 ## Mechanical parts
 - 1x 3/16" steel rods, 5" long
