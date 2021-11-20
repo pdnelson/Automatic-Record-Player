@@ -58,22 +58,22 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
   - A7: Horizontal gearing solenoid
 
 - Input Multiplexer
-  - IN 0: Play/Home button
-  - IN 1: Pause button
-  - IN 2: Vertical upper (pause) limit
-  - IN 3: Vertical lower (home) limit
-  - IN 4: Horizontal "home" optical sensor
-  - IN 5: Horizontal "play" 7" optical sensor
-  - IN 6: Horizontal "play" 10" optical sensor
-  - IN 7: Horizontal "play" 12" optical sensor
-  - IN 8: Record Size Selector 1
-  - IN 9: Record Size Selector 2
-  - IN 10: Horizontal "pickup" optical sensor
-  - IN 11: Auto/Manual mode switch
-  - IN 12: Turntable speed sensor
-  - IN 13: UNUSED
-  - IN 14: UNUSED
-  - IN 15: UNUSED
+  - S1: Play/Home button
+  - S2: Pause button
+  - S3: Vertical upper (pause) limit
+  - S4: Vertical lower (home) limit
+  - S5: Horizontal "home" optical sensor
+  - S6: Horizontal "play" 7" optical sensor
+  - S7: Horizontal "play" 10" optical sensor
+  - S8: Horizontal "play" 12" optical sensor
+  - S9: Record Size Selector 1
+  - S10: Record Size Selector 2
+  - S11: Horizontal "pickup" optical sensor
+  - S12: Auto/Manual mode switch
+  - S13: Turntable speed sensor
+  - S14: UNUSED
+  - S15: UNUSED
+  - S16: UNUSED
 
 - Motor Demultiplexer
   - OUT S1A: Vertical stepper motor pin 1
