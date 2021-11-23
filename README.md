@@ -87,12 +87,13 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
 
 # Parts list (so far)
 ## Electrical parts
-- Arduino Uno
+- Arduino Nano Every
 - Mean well RS-15-5 5V 3A power supply
+- 22 AWG Wire
 - 1x ADA2776 5v solenoid
 - 2x 28BYJ-48 stepper motors
 - 2x ULN2003 stepper motor drivers
-- 4x slotted optical sensors
+- slotted optical sensors (7x for full turntable, 5x for only 7")
 - 2x micro limit switches
 - breadboards (as many as you need)
 - 2x LED lights (any color; these are to indicate movement and pause)
@@ -101,10 +102,14 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
 - 1x HYEJET-01 motor
 - 2x 1N4007 diodes
 - 2x TIP120 transistors
-- 1x MUX36S16DA SOIC multiplexer
+- 1x MUX36S16DA SOIC 16-channel digital multiplexer
+- 1x ADG333AB quad 2-channel analog demultiplexer
+- [1x 0.056" 7-segment display w/ "backpack"](https://www.adafruit.com/product/879)
+- 10k panel-mount linear potentiometer (3x for regular size turntable, 1x for only 7") ([P160KN2-0QA25B10K](https://www.digikey.com/en/products/detail/tt-electronics-bi/P160KN2-0QA25B10K/5957459))
 
 ## Mechanical parts
-- 1x 3/16" steel rods, 5" long
+- 1x 9/32" diameter steel rod, between 4 and 5" long
+- 1x 3/16" diameter steel rod, 5" long
 - 1x 3/16" steel rods, 4" long
 - 1x 1.8"x1.8" key stock, ~3" long
 - many screws; 4-40 threading, 0.183" diameter head, 1/4" long
@@ -114,7 +119,13 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
 - yet more screws; 2-56 threading, 1/2" long
 - 5x5mm square nuts; 2-56 threading
 - washers for no. 2 screw size, 0.094" inner diameter
+- 3x 608RS ball bearings
 
 ## Miscellaneous parts
 - 10x10mm heat sinks
 - Thermal paste
+- Turntable belts (TODO: Figure out what size)
+- RCA breakout connectors
+- Any turntable stylus that fits a standard headshell
+- Turntable cartridge cable leads
+- Tinted plexiglass (2370)
