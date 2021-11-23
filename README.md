@@ -34,46 +34,46 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
 
 # Current pin usage
 - Digital
-  - 0: UNUSED
-  - 1: UNUSED
-  - 2: Input Multiplexer Selector D
-  - 3: UNUSED (reserved for possible future PWM usage)
-  - 4: Motor Demultiplexer D1
-  - 5: UNUSED (reserved for possible future PWM usage)
-  - 6: Motor Demultiplexer D2
-  - 7: Motor Demultiplexer D3
-  - 8: Motor Demultiplexer D4
-  - 9: Motor Demultiplexer select (IN1, IN2, IN3 and IN4)
-  - 10: Horizontal gearing solenoid
-  - 11: Movement status LED
-  - 12: Pause status LED
-  - 13: Multiplexer output
+  - D2: Input Multiplexer Selector A0
+  - D3: Input Multiplexer Selector A1
+  - D4: Input Multiplexer Selector A2
+  - D5: Input Multiplexer Selector A3
+  - D6: Input Multiplexer Output
+  - D7: Motor Demultiplexer D1
+  - D8: Motor Demultiplexer D2
+  - D9: Motor Demultiplexer D3
+  - D10: Motor Demultiplexer D4
+  - D11: Motor Demultiplexer select (IN1, IN2, IN3 and IN4)
+  - D12: Movement status LED
+  - D13: Pause status LED
 
 - Analog
-  - A0: Input Multiplexer Selector A
-  - A1: Input Multiplexer Selector B
-  - A2: Input Multiplexer Selector C
-  - A3: UNUSED
+  - A0: 7" position potentiometer
+  - A1: 10" position potentiometer
+  - A2: 12" position potentiometer
+  - A3: homing potentiometer
   - A4/SDA: 7-Segment Display Data
   - A5/SCL: 7-Segment Display Clock
+  - A6: Pickup delay potentiometer
+  - A7: Horizontal gearing solenoid
 
 - Input Multiplexer
-  - IN 0: Play/Home button
-  - IN 1: Pause button
-  - IN 2: Vertical upper (pause) limit
-  - IN 3: Vertical lower (home) limit
-  - IN 4: Horizontal "home" optical sensor
-  - IN 5: Horizontal "play" 7" optical sensor
-  - IN 6: Horizontal "play" 10" optical sensor
-  - IN 7: Horizontal "play" 12" optical sensor
-  - IN 8: Record Size Selector 1
-  - IN 9: Record Size Selector 2
-  - IN 10: Horizontal "pickup" optical sensor
-  - IN 11: Auto/Manual mode switch
-  - IN 12: Turntable speed sensor
-  - IN 13: UNUSED
-  - IN 14: UNUSED
-  - IN 15: UNUSED
+  - S1: Play/Home button
+  - S2: Pause button
+  - S3: Vertical upper (pause) limit
+  - S4: Vertical lower (home) limit
+  - S5: Horizontal "home" optical sensor
+  - S6: Horizontal "play" 7" optical sensor
+  - S7: Horizontal "play" 10" optical sensor
+  - S8: Horizontal "play" 12" optical sensor
+  - S9: Record Size Selector 1
+  - S10: Record Size Selector 2
+  - S11: Horizontal "pickup" optical sensor
+  - S12: Auto/Manual mode switch
+  - S13: Turntable speed sensor
+  - S14: UNUSED
+  - S15: UNUSED
+  - S16: UNUSED
 
 - Motor Demultiplexer
   - OUT S1A: Vertical stepper motor pin 1
@@ -102,7 +102,7 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
 - 1x HYEJET-01 motor
 - 2x 1N4007 diodes
 - 2x TIP120 transistors
-- 1x MUX36S16DA 16-channel digital multiplexer
+- 1x MUX36S16DA SOIC 16-channel digital multiplexer
 - 1x ADG333AB quad 2-channel analog demultiplexer
 - [1x 0.056" 7-segment display w/ "backpack"](https://www.adafruit.com/product/879)
 - 10k panel-mount linear potentiometer (3x for regular size turntable, 1x for only 7") ([P160KN2-0QA25B10K](https://www.digikey.com/en/products/detail/tt-electronics-bi/P160KN2-0QA25B10K/5957459))
@@ -129,4 +129,3 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
 - Any turntable stylus that fits a standard headshell
 - Turntable cartridge cable leads
 - Tinted plexiglass (2370)
-- 

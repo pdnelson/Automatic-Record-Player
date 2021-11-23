@@ -1,9 +1,10 @@
 #include <Stepper.h>
 #include <Multiplexer.h>
-#include "MultiplexerInput.h"
-#include "ErrorCode.h"
-#include "MotorAxis.h"
-#include "TonearmMovementDirection.h"
+#include "enums/MultiplexerInput.h"
+#include "enums/ErrorCode.h"
+#include "enums/MotorAxis.h"
+#include "enums/TonearmMovementDirection.h"
+#include "enums/AutoManualSwitchPosition.h"
 
 // Used for 7-segment display
 #include <Wire.h>
@@ -16,30 +17,31 @@
 
 // These motor pins channel into a quad 2-channel demultiplexer, so that either the vertical or horizontal motors receive
 // the voltages. Only one of these motors will ever be moving at once
-#define MOTOR_PIN1 2
-#define MOTOR_PIN2 4
-#define MOTOR_PIN3 7
-#define MOTOR_PIN4 8
+#define MOTOR_PIN1 7
+#define MOTOR_PIN2 8
+#define MOTOR_PIN3 9
+#define MOTOR_PIN4 10
 Stepper TonearmMotor = Stepper(STEPS_PER_REVOLUTION, MOTOR_PIN1, MOTOR_PIN3, MOTOR_PIN2, MOTOR_PIN4);
 
 // This is the pin used to select which motor we are moving, using the demultiplexer.
-#define MOTOR_AXIS_SELECTOR 9
+#define MOTOR_AXIS_SELECTOR 11
 
 // This is used to engage the horizontal gears for movement. This is needed so that the gears aren't engaged
 // when a record is playing or any other times, otherwise the record would not be able to move the tonearm
 // very well...
-#define HORIZONTAL_GEARING_SOLENOID 10
+#define HORIZONTAL_GEARING_SOLENOID A7
 
 // Indicator lights so we can tell what the turntable is currently doing.
-#define MOVEMENT_STATUS_LED 11
-#define PAUSE_STATUS_LED 12
+#define MOVEMENT_STATUS_LED 12
+#define PAUSE_STATUS_LED 13
 
 // These are the selector pins for the multiplexer that is used to handle all inputs.
-#define MUX_OUTPUT 13
-#define MUX_SELECTOR_A A0
-#define MUX_SELECTOR_B A1
-#define MUX_SELECTOR_C A2
-Multiplexer mux = Multiplexer(MUX_OUTPUT, MUX_SELECTOR_A, MUX_SELECTOR_B, MUX_SELECTOR_C);
+#define MUX_OUTPUT 6
+#define MUX_SELECTOR_A 2
+#define MUX_SELECTOR_B 3
+#define MUX_SELECTOR_C 4
+#define MUX_SELECTOR_D 5
+Multiplexer mux = Multiplexer(MUX_OUTPUT, MUX_SELECTOR_A, MUX_SELECTOR_B, MUX_SELECTOR_C, MUX_SELECTOR_D);
 
 // The motors used in this project are 28BYJ-48 stepper motors, which I've found to cap at 11 RPM 
 // before becoming too unreliable. 8 or 9 I've found to be a good balance for speed and reliability at 5v DC.
@@ -48,9 +50,7 @@ Multiplexer mux = Multiplexer(MUX_OUTPUT, MUX_SELECTOR_A, MUX_SELECTOR_B, MUX_SE
 // These are timeouts used for error checking, so the hardware doesn't damage itself.
 // Essentially, if the steps exceed this number and the motor has not yet reached its
 // destination, an error has occurred.
-#define PLAY_TIMEOUT_STEPS 1000 // Number of steps until movement to the horizontal "play" sensor should time out.
-#define HOME_TIMEOUT_STEPS 1000 // Number of steps until movement to the horizontal "home" sensor should time out.
-#define VERTICAL_TIMEOUT_STEPS 1000 // Number of steps until a vertical movement should time out.
+#define MOVEMENT_TIMEOUT_STEPS 1000
 
 // Step counts used for error checking. We will have an idea of how many steps a movement should take,
 // so here we are keeping track of those so we know it doesn't exceed the limits defined above.
@@ -66,7 +66,6 @@ bool currentSensorStatus = false;
 ErrorCode currentMovementStatus;
 
 // All of these fields are used to calculate the speed that the turntable is spinning.
-#define SPEED_SENSOR 3
 Adafruit_7segment speedDisplay = Adafruit_7segment();
 double currSpeed = 0.0;
 double lastSpeed = 0.0;
@@ -76,27 +75,24 @@ bool lastSpeedSensorStatus;
 bool currSpeedSensorStatus;
 
 void setup() {
-  //Serial.begin(SERIAL_SPEED);
-
-  speedDisplay.begin(0x70);
-  speedDisplay.print("----");
-  speedDisplay.writeDisplay();
-
-  pinMode(SPEED_SENSOR, INPUT);
-  lastSpeedSensorStatus = digitalRead(SPEED_SENSOR);
-  currSpeedSensorStatus = lastSpeedSensorStatus;
+  Serial.begin(SERIAL_SPEED);
 
   pinMode(MOTOR_AXIS_SELECTOR, OUTPUT);
-
-  mux.setDelayMicroseconds(10);
-
   pinMode(HORIZONTAL_GEARING_SOLENOID, OUTPUT);
-
   pinMode(MOVEMENT_STATUS_LED, OUTPUT);
   pinMode(PAUSE_STATUS_LED, OUTPUT);
 
+  mux.setDelayMicroseconds(10);
+
+  speedDisplay.begin(0x70);
+  speedDisplay.print(0.0);
+  speedDisplay.writeDisplay();
+
+  lastSpeedSensorStatus = mux.readDigitalValue(MultiplexerInput::TurntableSpeedSensor);
+  currSpeedSensorStatus = lastSpeedSensorStatus;
+
   // If the turntable is turned on to "automatic," then home the whole tonearm if it is not already home.
-  if(mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) && 
+  if(mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) == AutoManualSwitchPosition::Automatic && 
     !mux.readDigitalValue(MultiplexerInput::HorizontalHomeOpticalSensor)) {
     currentMovementStatus = homeTonearm();
 
@@ -107,9 +103,10 @@ void setup() {
 
   // Otherwise, we only want to home the vertical axis, which will drop the tonearm in its current location.
   else {
-    if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, VERTICAL_TIMEOUT_STEPS))
+    if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, MOVEMENT_TIMEOUT_STEPS))
       setErrorState(ErrorCode::VerticalHomeError);
   }
+  Serial.println("Successfully completed setup");
 }
 
 // This sits and waits for any of the command buttons to be pressed.
@@ -129,7 +126,7 @@ void loop() {
 
     // If the tonearm is past the location of the play sensor, then this button will home it. Otherwise, it will execute
     // the play routine.
-    if(mux.readDigitalValue(MultiplexerInput::HorizontalPlayOpticalSensor)) 
+    if(mux.readDigitalValue(getActivePlaySensor())) 
       currentMovementStatus = playRoutine();
     else 
       currentMovementStatus = homeTonearm();
@@ -138,20 +135,19 @@ void loop() {
       setErrorState(currentMovementStatus);
     }
   }
-
   calculateTurntableSpeed();
 }
 
 ErrorCode homeTonearm() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
-  if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalUpperLimit, 8, VERTICAL_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalUpperLimit, 8, MOVEMENT_TIMEOUT_STEPS))
     return ErrorCode::VerticalPickupError;
 
-  if(!moveTonearmToSensor(MotorAxis::Horizontal, MultiplexerInput::HorizontalHomeOpticalSensor, 7, HOME_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Horizontal, MultiplexerInput::HorizontalHomeOpticalSensor, 7, MOVEMENT_TIMEOUT_STEPS))
     return ErrorCode::HorizontalHomeError;
 
-  if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, VERTICAL_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, MOVEMENT_TIMEOUT_STEPS))
     return ErrorCode::VerticalHomeError;
 
   unlockHorizontalGears();
@@ -168,7 +164,7 @@ ErrorCode pauseAndWaitUntilUnpaused() {
 
   // Only "pause" if the tonearm is not already paused.
   if(!mux.readDigitalValue(MultiplexerInput::VerticalUpperLimit)) {
-    if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalUpperLimit, 8, VERTICAL_TIMEOUT_STEPS))
+    if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalUpperLimit, 8, MOVEMENT_TIMEOUT_STEPS))
       return ErrorCode::VerticalPickupError;
 
     // Wait for the user to unpause.
@@ -177,7 +173,7 @@ ErrorCode pauseAndWaitUntilUnpaused() {
     }
   }
 
-  if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, VERTICAL_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, MOVEMENT_TIMEOUT_STEPS))
     return ErrorCode::VerticalHomeError;
 
   digitalWrite(PAUSE_STATUS_LED, LOW);
@@ -188,13 +184,13 @@ ErrorCode pauseAndWaitUntilUnpaused() {
 ErrorCode playRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
-  if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalUpperLimit, 8, VERTICAL_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalUpperLimit, 8, MOVEMENT_TIMEOUT_STEPS))
     return ErrorCode::VerticalPickupError;
 
-  if(!moveTonearmToSensor(MotorAxis::Horizontal, MultiplexerInput::HorizontalPlayOpticalSensor, 4, PLAY_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Horizontal, getActivePlaySensor(), 4, MOVEMENT_TIMEOUT_STEPS))
     return ErrorCode::PlayError;
 
-  if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, VERTICAL_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, MOVEMENT_TIMEOUT_STEPS))
     return ErrorCode::VerticalHomeError;
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
@@ -247,6 +243,22 @@ bool moveTonearmToSensor(MotorAxis axis, MultiplexerInput destinationSensor, uin
     return true;
 }
 
+// This uses RecordSizeSelector1 and RecordSizeSelector2 to determine the record size the user
+// currently has selected.
+MultiplexerInput getActivePlaySensor() {
+
+  // If only RecordSizeSelector1 is HIGH, we are using the 7" sensor
+  if(mux.readDigitalValue(MultiplexerInput::RecordSizeSelector1))
+    return MultiplexerInput::HorizontalPlay7InchOpticalSensor;
+
+  // If only RecordSizeSelector2 is HIGH, we are using the 12" sensor
+  else if (mux.readDigitalValue(MultiplexerInput::RecordSizeSelector2))
+    return MultiplexerInput::HorizontalPlay12InchOpticalSensor;
+
+  // If NEITHER RecordSizeSelectors are HIGH, we are using the 10" sensor
+  return MultiplexerInput::HorizontalPlay10InchOpticalSensor;
+}
+
 // This is used to release current from both motors so they aren't drawing power when not in use.
 void releaseCurrentFromMotors() {
     digitalWrite(MOTOR_PIN1, LOW);
@@ -272,7 +284,7 @@ void unlockHorizontalGears() {
 
 // This function will calculate the speed of the turntable 8 times per rotation.
 void calculateTurntableSpeed() {
-  currSpeedSensorStatus = digitalRead(SPEED_SENSOR);
+  currSpeedSensorStatus = mux.readDigitalValue(MultiplexerInput::TurntableSpeedSensor);
   
   if(currSpeedSensorStatus != lastSpeedSensorStatus) {
     currMillis = millis();
@@ -289,9 +301,10 @@ void calculateTurntableSpeed() {
   }
 
   // If 1 second elapses without a sensor change, we can assume that the turntable has stopped.
-  else if(millis() - currMillis > 1000) {
-    speedDisplay.print("----");
+  else if(millis() - currMillis > 1000 && lastSpeed > 0.0) {
+    speedDisplay.print(0.0);
     speedDisplay.writeDisplay();
+    lastSpeed = 0.0;
   }
 
   lastSpeedSensorStatus = currSpeedSensorStatus;
@@ -335,9 +348,11 @@ void blinkLed(int led, int interval) {
   // Only blink until a button is pressed.
   // TODO: Make this not require holding the button until the interval has elapsed.
   while(!mux.readDigitalValue(MultiplexerInput::PauseButton) && !mux.readDigitalValue(MultiplexerInput::PlayHomeButton)) {
-    digitalWrite(led, LOW);
+    digitalWrite(PAUSE_STATUS_LED, LOW);
+    digitalWrite(MOVEMENT_STATUS_LED, LOW);
     delay(interval);
-    digitalWrite(led, HIGH);
+    digitalWrite(PAUSE_STATUS_LED, HIGH);
+    digitalWrite(MOVEMENT_STATUS_LED, HIGH);
     delay(interval);
   }
 
