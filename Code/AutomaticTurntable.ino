@@ -17,30 +17,30 @@
 
 // These motor pins channel into a quad 2-channel demultiplexer, so that either the vertical or horizontal motors receive
 // the voltages. Only one of these motors will ever be moving at once
-#define MOTOR_PIN1 4
-#define MOTOR_PIN2 6
-#define MOTOR_PIN3 7
-#define MOTOR_PIN4 8
+#define MOTOR_PIN1 7
+#define MOTOR_PIN2 8
+#define MOTOR_PIN3 9
+#define MOTOR_PIN4 10
 Stepper TonearmMotor = Stepper(STEPS_PER_REVOLUTION, MOTOR_PIN1, MOTOR_PIN3, MOTOR_PIN2, MOTOR_PIN4);
 
 // This is the pin used to select which motor we are moving, using the demultiplexer.
-#define MOTOR_AXIS_SELECTOR 9
+#define MOTOR_AXIS_SELECTOR 11
 
 // This is used to engage the horizontal gears for movement. This is needed so that the gears aren't engaged
 // when a record is playing or any other times, otherwise the record would not be able to move the tonearm
 // very well...
-#define HORIZONTAL_GEARING_SOLENOID 10
+#define HORIZONTAL_GEARING_SOLENOID A7
 
 // Indicator lights so we can tell what the turntable is currently doing.
-#define MOVEMENT_STATUS_LED 11
-#define PAUSE_STATUS_LED 12
+#define MOVEMENT_STATUS_LED 12
+#define PAUSE_STATUS_LED 13
 
 // These are the selector pins for the multiplexer that is used to handle all inputs.
-#define MUX_OUTPUT 13
-#define MUX_SELECTOR_A A0
-#define MUX_SELECTOR_B A1
-#define MUX_SELECTOR_C A2
-#define MUX_SELECTOR_D 2
+#define MUX_OUTPUT 6
+#define MUX_SELECTOR_A 2
+#define MUX_SELECTOR_B 3
+#define MUX_SELECTOR_C 4
+#define MUX_SELECTOR_D 5
 Multiplexer mux = Multiplexer(MUX_OUTPUT, MUX_SELECTOR_A, MUX_SELECTOR_B, MUX_SELECTOR_C, MUX_SELECTOR_D);
 
 // The motors used in this project are 28BYJ-48 stepper motors, which I've found to cap at 11 RPM 
@@ -75,7 +75,7 @@ bool lastSpeedSensorStatus;
 bool currSpeedSensorStatus;
 
 void setup() {
-  //Serial.begin(SERIAL_SPEED);
+  Serial.begin(SERIAL_SPEED);
 
   pinMode(MOTOR_AXIS_SELECTOR, OUTPUT);
   pinMode(HORIZONTAL_GEARING_SOLENOID, OUTPUT);
@@ -106,6 +106,7 @@ void setup() {
     if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, MOVEMENT_TIMEOUT_STEPS))
       setErrorState(ErrorCode::VerticalHomeError);
   }
+  Serial.println("Successfully completed setup");
 }
 
 // This sits and waits for any of the command buttons to be pressed.
@@ -134,7 +135,6 @@ void loop() {
       setErrorState(currentMovementStatus);
     }
   }
-
   calculateTurntableSpeed();
 }
 
@@ -348,9 +348,11 @@ void blinkLed(int led, int interval) {
   // Only blink until a button is pressed.
   // TODO: Make this not require holding the button until the interval has elapsed.
   while(!mux.readDigitalValue(MultiplexerInput::PauseButton) && !mux.readDigitalValue(MultiplexerInput::PlayHomeButton)) {
-    digitalWrite(led, LOW);
+    digitalWrite(PAUSE_STATUS_LED, LOW);
+    digitalWrite(MOVEMENT_STATUS_LED, LOW);
     delay(interval);
-    digitalWrite(led, HIGH);
+    digitalWrite(PAUSE_STATUS_LED, HIGH);
+    digitalWrite(MOVEMENT_STATUS_LED, HIGH);
     delay(interval);
   }
 
