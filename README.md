@@ -71,7 +71,7 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
   - S11: Horizontal "pickup" optical sensor
   - S12: Auto/Manual mode switch
   - S13: Turntable speed sensor
-  - S14: UNUSED
+  - S14: Clear errors and home (Automatic changer command ONLY)
   - S15: UNUSED
   - S16: UNUSED
 
