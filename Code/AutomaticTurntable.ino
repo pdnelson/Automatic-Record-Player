@@ -69,18 +69,34 @@ ErrorCode currentMovementStatus;
 Adafruit_7segment speedDisplay = Adafruit_7segment();
 double currSpeed = 0.0;
 double lastSpeed = 0.0;
-unsigned long lastMillis = millis();
 unsigned long currMillis = millis();
-bool lastSpeedSensorStatus;
+unsigned long lastMillis = millis();
 bool currSpeedSensorStatus;
+bool lastSpeedSensorStatus;
+
+// Calibration potentiometers are used to move the tonearm a few steps past the sensor, so that the user has an easy way
+// to fine-tune where exactly it should be set down (or picked up)
+#define CALIBRATION_POT_7IN A0
+#define CALIBRATION_POT_10IN A1
+#define CALIBRATION_POT_12IN A2
+#define CALIBRATION_POT_HOME A3
+#define CALIBRATION_POT_PICKUP A6
+
+unsigned int currentHorizontalCalibration = 0;
+MultiplexerInput currentPlaySensor;
 
 void setup() {
-  Serial.begin(SERIAL_SPEED);
+  //Serial.begin(SERIAL_SPEED);
 
   pinMode(MOTOR_AXIS_SELECTOR, OUTPUT);
   pinMode(HORIZONTAL_GEARING_SOLENOID, OUTPUT);
   pinMode(MOVEMENT_STATUS_LED, OUTPUT);
   pinMode(PAUSE_STATUS_LED, OUTPUT);
+  pinMode(CALIBRATION_POT_7IN, INPUT);
+  pinMode(CALIBRATION_POT_10IN, INPUT);
+  pinMode(CALIBRATION_POT_12IN, INPUT);
+  pinMode(CALIBRATION_POT_HOME, INPUT);
+  pinMode(CALIBRATION_POT_PICKUP, INPUT);
 
   mux.setDelayMicroseconds(10);
 
@@ -90,6 +106,8 @@ void setup() {
 
   lastSpeedSensorStatus = mux.readDigitalValue(MultiplexerInput::TurntableSpeedSensor);
   currSpeedSensorStatus = lastSpeedSensorStatus;
+
+  currentPlaySensor = getActivePlaySensor();
 
   // If the turntable is turned on to "automatic," then home the whole tonearm if it is not already home.
   if(mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) == AutoManualSwitchPosition::Automatic && 
@@ -106,7 +124,6 @@ void setup() {
     if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, MOVEMENT_TIMEOUT_STEPS))
       setErrorState(ErrorCode::VerticalHomeError);
   }
-  Serial.println("Successfully completed setup");
 }
 
 // This sits and waits for any of the command buttons to be pressed.
@@ -141,16 +158,18 @@ void loop() {
 ErrorCode homeTonearm() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
+  currentHorizontalCalibration = 0; //getHorizontalSensorCalibration(MultiplexerInput::HorizontalHomeOpticalSensor);
+
   if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalUpperLimit, 8, MOVEMENT_TIMEOUT_STEPS))
     return ErrorCode::VerticalPickupError;
 
-  if(!moveTonearmToSensor(MotorAxis::Horizontal, MultiplexerInput::HorizontalHomeOpticalSensor, 7, MOVEMENT_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Horizontal, MultiplexerInput::HorizontalHomeOpticalSensor, 7, MOVEMENT_TIMEOUT_STEPS, currentHorizontalCalibration))
     return ErrorCode::HorizontalHomeError;
 
   if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, MOVEMENT_TIMEOUT_STEPS))
     return ErrorCode::VerticalHomeError;
 
-  unlockHorizontalGears();
+  moveTonearmXSteps(20);
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
 
@@ -184,10 +203,13 @@ ErrorCode pauseAndWaitUntilUnpaused() {
 ErrorCode playRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
+  currentPlaySensor = getActivePlaySensor();
+  currentHorizontalCalibration = 0; //getHorizontalSensorCalibration(currentPlaySensor);
+
   if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalUpperLimit, 8, MOVEMENT_TIMEOUT_STEPS))
     return ErrorCode::VerticalPickupError;
 
-  if(!moveTonearmToSensor(MotorAxis::Horizontal, getActivePlaySensor(), 4, MOVEMENT_TIMEOUT_STEPS))
+  if(!moveTonearmToSensor(MotorAxis::Horizontal, currentPlaySensor, 4, MOVEMENT_TIMEOUT_STEPS, currentHorizontalCalibration))
     return ErrorCode::PlayError;
 
   if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, MOVEMENT_TIMEOUT_STEPS))
@@ -199,7 +221,7 @@ ErrorCode playRoutine() {
 }
 
 // Moves the tonearm to a specified destination.
-bool moveTonearmToSensor(MotorAxis axis, MultiplexerInput destinationSensor, uint8_t speed, unsigned int timeout) {
+bool moveTonearmToSensor(MotorAxis axis, MultiplexerInput destinationSensor, uint8_t speed, unsigned int timeout, unsigned int calibration = 0) {
     digitalWrite(MOTOR_AXIS_SELECTOR, axis);
 
     movementStepCount = 0;
@@ -226,7 +248,7 @@ bool moveTonearmToSensor(MotorAxis axis, MultiplexerInput destinationSensor, uin
 
       // If the sensor isn't hit in the expected time, the movement failed.
       if(movementStepCount++ >= timeout) {
-        unlockHorizontalGears();
+        moveTonearmXSteps(20); // Move 20 steps clockwise to unlock horizontal gears
         digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
         return false;
       }
@@ -234,8 +256,10 @@ bool moveTonearmToSensor(MotorAxis axis, MultiplexerInput destinationSensor, uin
     
     releaseCurrentFromMotors();
 
-    // If it is a horizontal movement, make sure all movement has ceased before releasing the horizontal solenoid
+    // If it is a horizontal movement, go a few extra steps that the user defines for calibration.
+    // Also, make sure all movement has ceased before releasing the horizontal solenoid.
     if(axis == MotorAxis::Horizontal) {
+      moveTonearmXSteps(calibration); // Move tonearm additional steps to account for calibration set by rear potentiometers
       delay(500);
       digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
     }
@@ -259,6 +283,30 @@ MultiplexerInput getActivePlaySensor() {
   return MultiplexerInput::HorizontalPlay10InchOpticalSensor;
 }
 
+// Returns the calibration step offset for the given sensor.
+// The returned value will be the number of steps (clockwise or counterclockwise) that the horizontal motor should move.
+// Pickup calibration return value is expressed in number of seconds that should be waited before the homing routine is
+// executed at the end of a record.
+unsigned int getHorizontalSensorCalibration(MultiplexerInput sensor) {
+  if(sensor == MultiplexerInput::HorizontalPlay7InchOpticalSensor)
+    return analogRead(CALIBRATION_POT_7IN);
+
+  else if(sensor == MultiplexerInput::HorizontalPlay10InchOpticalSensor)
+    return analogRead(CALIBRATION_POT_10IN);
+
+  else if(sensor == MultiplexerInput::HorizontalPlay12InchOpticalSensor)
+    return analogRead(CALIBRATION_POT_12IN);
+
+  else if(sensor == MultiplexerInput::HorizontalHomeOpticalSensor)
+    return analogRead(CALIBRATION_POT_HOME);
+
+  else if(sensor == MultiplexerInput::HorizontalPickupOpticalSensor)
+    return analogRead(CALIBRATION_POT_PICKUP);
+
+  else
+    return 0;
+}
+
 // This is used to release current from both motors so they aren't drawing power when not in use.
 void releaseCurrentFromMotors() {
     digitalWrite(MOTOR_PIN1, LOW);
@@ -269,13 +317,15 @@ void releaseCurrentFromMotors() {
     digitalWrite(MOTOR_AXIS_SELECTOR, LOW);
 }
 
-// Move the tonearm gears clockwise a few steps to un-lock the gears. This is needed because, occasionally, when moving counter-clockwise
-// the gears will have trouble un-locking from each other after a movement (even after the solenoid has collapsed).
-void unlockHorizontalGears() {
+// Move the tonearm horizontally by the given step count. A positive value will move the tonearm clockwise, and a negative value
+// counter-clockwise. This is a blind movement, meaning there is no check at the end that the tonearm successfully moved all
+// steps. This is only intended to be used for calibration offsets, and moving a few steps to unlock gears.
+void moveTonearmXSteps(int steps) {
   movementStepCount = 0;
+
   digitalWrite(MOTOR_AXIS_SELECTOR, MotorAxis::Horizontal);
 
-  while(movementStepCount++ < 20) {
+  while(movementStepCount++ < steps) {
     TonearmMotor.step(MOVEMENT_RPM);
   }
 
