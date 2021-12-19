@@ -99,7 +99,7 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
 - 2x LED lights (any color; these are to indicate movement and pause)
 - 26 AWG stranded wire
 - 3x blue cherry mx Mechanical Keyswitch
-- 1x HYEJET-01 motor
+- 1x HYEJET-01 motor (uses M2 screws)
 - 2x 1N4007 diodes
 - 2x TIP120 transistors
 - 1x MUX36S16DA SOIC 16-channel digital multiplexer
@@ -120,11 +120,15 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
 - 5x5mm square nuts; 2-56 threading
 - washers for no. 2 screw size, 0.094" inner diameter
 - 3x 608RS ball bearings
+- For turntable motor
+  - 6x M2 screws; 8mm thread length
+  - 6x felt cushioning washers (0.138" ID, 0.250" OD, 0.188" thickness (can be trimmed))
+  - 12x felt cushioning washers (0.250" ID, 0.500" OD (can be trimmed), 0.25" (can be trimmed))
 
 ## Miscellaneous parts
 - 10x10mm heat sinks
 - Thermal paste
-- Turntable belts (TODO: Figure out what size)
+- Turntable belt (19cm folded length)
 - RCA breakout connectors
 - Any turntable stylus that fits a standard headshell
 - Turntable cartridge cable leads
