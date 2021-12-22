@@ -169,7 +169,7 @@ ErrorCode homeTonearm() {
   if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, MOVEMENT_TIMEOUT_STEPS))
     return ErrorCode::VerticalHomeError;
 
-  moveTonearmXSteps(20);
+  horizontalRelativeMove(20);
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
 
@@ -248,7 +248,7 @@ bool moveTonearmToSensor(MotorAxis axis, MultiplexerInput destinationSensor, uin
 
       // If the sensor isn't hit in the expected time, the movement failed.
       if(movementStepCount++ >= timeout) {
-        moveTonearmXSteps(20); // Move 20 steps clockwise to unlock horizontal gears
+        horizontalRelativeMove(20); // Move 20 steps clockwise to unlock horizontal gears
         digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
         return false;
       }
@@ -259,7 +259,7 @@ bool moveTonearmToSensor(MotorAxis axis, MultiplexerInput destinationSensor, uin
     // If it is a horizontal movement, go a few extra steps that the user defines for calibration.
     // Also, make sure all movement has ceased before releasing the horizontal solenoid.
     if(axis == MotorAxis::Horizontal) {
-      moveTonearmXSteps(calibration); // Move tonearm additional steps to account for calibration set by rear potentiometers
+      horizontalRelativeMove(calibration); // Move tonearm additional steps to account for calibration set by rear potentiometers
       delay(500);
       digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
     }
@@ -320,7 +320,7 @@ void releaseCurrentFromMotors() {
 // Move the tonearm horizontally by the given step count. A positive value will move the tonearm clockwise, and a negative value
 // counter-clockwise. This is a blind movement, meaning there is no check at the end that the tonearm successfully moved all
 // steps. This is only intended to be used for calibration offsets, and moving a few steps to unlock gears.
-void moveTonearmXSteps(int steps) {
+void horizontalRelativeMove(int steps) {
   movementStepCount = 0;
 
   digitalWrite(MOTOR_AXIS_SELECTOR, MotorAxis::Horizontal);
