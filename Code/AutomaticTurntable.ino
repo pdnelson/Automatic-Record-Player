@@ -46,7 +46,8 @@ Multiplexer mux = Multiplexer(MUX_OUTPUT, MUX_SELECTOR_A, MUX_SELECTOR_B, MUX_SE
 
 // The motors used in this project are 28BYJ-48 stepper motors, which I've found to cap at 11 RPM 
 // before becoming too unreliable. 8 or 9 I've found to be a good balance for speed and reliability at 5v DC.
-#define MOVEMENT_RPM 8
+#define DEFAULT_MOVEMENT_RPM 8
+uint8_t tonearmMovementRpm = DEFAULT_MOVEMENT_RPM;
 
 // These are timeouts used for error checking, so the hardware doesn't damage itself.
 // Essentially, if the steps exceed this number and the motor has not yet reached its
@@ -83,7 +84,7 @@ bool lastSpeedSensorStatus;
 #define CALIBRATION_POT_HOME A3
 #define CALIBRATION_POT_PICKUP A6
 
-unsigned int currentHorizontalCalibration = 0;
+int currentHorizontalCalibration = 0;
 MultiplexerInput currentPlaySensor;
 
 void setup() {
@@ -133,7 +134,7 @@ void setup() {
 
   // Otherwise, we only want to home the vertical axis if it is not already homed, which will drop the tonearm in its current location.
   else if(!mux.readDigitalValue(MultiplexerInput::VerticalLowerLimit)) {
-    if(!moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, 8, MOVEMENT_TIMEOUT_STEPS))
+    if(!moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS))
       setErrorState(ErrorCode::VerticalHomeError);
   }
 }
@@ -170,18 +171,18 @@ void loop() {
 ErrorCode homeRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
-  currentHorizontalCalibration = 0; //getHorizontalSensorCalibration(MultiplexerInput::HorizontalHomeOpticalSensor);
+  currentHorizontalCalibration = -100; //getHorizontalSensorCalibration(MultiplexerInput::HorizontalHomeOpticalSensor);
 
-  if(!moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, 8, MOVEMENT_TIMEOUT_STEPS))
+  if(!moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS))
     return ErrorCode::VerticalPickupError;
 
-  if(!moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOpticalSensor, 7, MOVEMENT_TIMEOUT_STEPS, currentHorizontalCalibration))
+  if(!moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOpticalSensor, MOVEMENT_TIMEOUT_STEPS, currentHorizontalCalibration, 7))
     return ErrorCode::HorizontalHomeError;
 
-  if(!moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, 8, MOVEMENT_TIMEOUT_STEPS))
+  if(!moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS))
     return ErrorCode::VerticalHomeError;
 
-  horizontalRelativeMove(20);
+  horizontalRelativeMove(200);
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
 
@@ -195,7 +196,7 @@ ErrorCode pauseAndWaitUntilUnpaused() {
 
   // Only "pause" if the tonearm is not already paused.
   if(!mux.readDigitalValue(MultiplexerInput::VerticalUpperLimit)) {
-    if(!moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, 8, MOVEMENT_TIMEOUT_STEPS))
+    if(!moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS))
       return ErrorCode::VerticalPickupError;
 
     // Wait for the user to unpause.
@@ -204,7 +205,15 @@ ErrorCode pauseAndWaitUntilUnpaused() {
     }
   }
 
-  if(!moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, 8, MOVEMENT_TIMEOUT_STEPS))
+  // If the tonearm is hovering over home position, then just go down at default speed
+  if(mux.readDigitalValue(MultiplexerInput::HorizontalHomeOpticalSensor)) {
+    tonearmMovementRpm = DEFAULT_MOVEMENT_RPM;
+  }
+
+  // Otherwise, set it down carefully
+  else tonearmMovementRpm = 3;
+
+  if(!moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, tonearmMovementRpm))
     return ErrorCode::VerticalHomeError;
 
   digitalWrite(PAUSE_STATUS_LED, LOW);
@@ -218,16 +227,16 @@ ErrorCode playRoutine() {
   currentPlaySensor = getActivePlaySensor();
   currentHorizontalCalibration = 0; //getHorizontalSensorCalibration(currentPlaySensor);
 
-  if(!moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, 8, MOVEMENT_TIMEOUT_STEPS))
+  if(!moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS))
     return ErrorCode::VerticalPickupError;
 
-  if(!moveTonearmHorizontally(currentPlaySensor, 4, MOVEMENT_TIMEOUT_STEPS, currentHorizontalCalibration))
+  if(!moveTonearmHorizontally(currentPlaySensor, MOVEMENT_TIMEOUT_STEPS, currentHorizontalCalibration, 4))
     return ErrorCode::PlayError;
 
-  if(!moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, 8, MOVEMENT_TIMEOUT_STEPS))
+  if(!moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, 4))
     return ErrorCode::VerticalHomeError;
 
-  horizontalRelativeMove(20);
+  horizontalRelativeMove(100, 8);
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
   
@@ -235,7 +244,7 @@ ErrorCode playRoutine() {
 }
 
 // Moves the tonearm to a specified destination.
-bool moveTonearmHorizontally(MultiplexerInput destinationSensor, uint8_t speed, unsigned int timeout, unsigned int calibration) {
+bool moveTonearmHorizontally(MultiplexerInput destinationSensor, unsigned int timeout, int calibration, uint8_t speed) {
     // Only make the movement if it is a valid destination sensor
     if(!(destinationSensor == MultiplexerInput::HorizontalHomeOpticalSensor || 
         destinationSensor == MultiplexerInput::HorizontalPlay7InchOpticalSensor || 
@@ -251,7 +260,7 @@ bool moveTonearmHorizontally(MultiplexerInput destinationSensor, uint8_t speed, 
     digitalWrite(MOTOR_AXIS_SELECTOR, MotorAxis::Horizontal);
 
     currentSensorStatus = mux.readDigitalValue(destinationSensor); 
-    movementDirection = currentSensorStatus ? TonearmMovementDirection::Counterclockwise : TonearmMovementDirection::Clockwise;
+    movementDirection = currentSensorStatus ? TonearmMovementDirection::Clockwise : TonearmMovementDirection::Counterclockwise;
 
     digitalWrite(HORIZONTAL_GEARING_SOLENOID, HIGH);
 
@@ -261,13 +270,13 @@ bool moveTonearmHorizontally(MultiplexerInput destinationSensor, uint8_t speed, 
 
       // If the sensor isn't hit in the expected time, the movement failed.
       if(movementStepCount++ >= timeout) {
-        horizontalRelativeMove(20); // Move 20 steps clockwise to unlock horizontal gears
+        horizontalRelativeMove(200); // Move clockwise to unlock horizontal gears
         digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
         return false;
       }
     }
 
-    horizontalRelativeMove(calibration); // Move tonearm additional steps to account for calibration set by rear potentiometers
+    horizontalRelativeMove(calibration, speed); // Move tonearm additional steps to account for calibration set by rear potentiometers
     delay(250); // Verify movement has truly ceased before releasing the solenoid
     digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
 
@@ -276,7 +285,7 @@ bool moveTonearmHorizontally(MultiplexerInput destinationSensor, uint8_t speed, 
     return true;
 }
 
-bool moveTonearmVertically(MultiplexerInput destinationSensor, uint8_t speed, unsigned int timeout) {
+bool moveTonearmVertically(MultiplexerInput destinationSensor, unsigned int timeout, uint8_t speed = DEFAULT_MOVEMENT_RPM) {
 
   // Only perform the operation if the tonearm is not already at its destination.
   if(!mux.readDigitalValue(destinationSensor)) {
@@ -324,13 +333,17 @@ void releaseCurrentFromMotors() {
 // Move the tonearm horizontally by the given step count. A positive value will move the tonearm clockwise, and a negative value
 // counter-clockwise. This is a blind movement, meaning there is no check at the end that the tonearm successfully moved all
 // steps. This is only intended to be used for calibration offsets, and moving a few steps to unlock gears.
-void horizontalRelativeMove(int steps) {
+void horizontalRelativeMove(int steps, uint8_t speed = DEFAULT_MOVEMENT_RPM) {
   movementStepCount = 0;
 
   digitalWrite(MOTOR_AXIS_SELECTOR, MotorAxis::Horizontal);
+  TonearmMotor.setSpeed(speed);
+
+  movementDirection = (steps > 0) ? TonearmMovementDirection::Clockwise : TonearmMovementDirection::Counterclockwise;
+  steps = abs(steps);
 
   while(movementStepCount++ < steps) {
-    TonearmMotor.step(MOVEMENT_RPM);
+    TonearmMotor.step(movementDirection);
   }
 
   releaseCurrentFromMotors();

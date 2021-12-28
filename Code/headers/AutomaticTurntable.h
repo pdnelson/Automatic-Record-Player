@@ -12,9 +12,9 @@
     ErrorCode playRoutine();
 
     // Tonearm movement
-    bool moveTonearmHorizontally(MotorAxis axis, MultiplexerInput destinationSensor, uint8_t speed, unsigned int timeout, unsigned int calibration);
-    bool moveTonearmVertically(MultiplexerInput destinationSensor, uint8_t speed, unsigned int timeout);
-    void horizontalRelativeMove(int steps);
+    bool moveTonearmHorizontally(MultiplexerInput destinationSensor, unsigned int timeout, int calibration, uint8_t speed = 8);
+    bool moveTonearmVertically(MultiplexerInput destinationSensor, unsigned int timeout, uint8_t speed = 8);
+    void horizontalRelativeMove(int steps, uint8_t speed = 8);
     void releaseCurrentFromMotors();
 
     // Status/settings
