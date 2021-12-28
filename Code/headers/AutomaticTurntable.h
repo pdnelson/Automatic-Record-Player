@@ -7,7 +7,7 @@
 #define AutoTurntable_h
 
     // Routine commands
-    ErrorCode homeTonearm();
+    ErrorCode homeRoutine();
     ErrorCode pauseAndWaitUntilUnpaused();
     ErrorCode playRoutine();
 

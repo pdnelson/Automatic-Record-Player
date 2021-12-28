@@ -102,8 +102,19 @@ void setup() {
   mux.setDelayMicroseconds(10);
 
   speedDisplay.begin(0x70);
-  speedDisplay.print(0.0);
+  speedDisplay.print("JHI");
   speedDisplay.writeDisplay();
+
+  // Began startup light show
+  delay(100);
+  digitalWrite(MOVEMENT_STATUS_LED, HIGH);
+  delay(100);
+  digitalWrite(PAUSE_STATUS_LED, HIGH);
+  delay(100);
+  digitalWrite(PAUSE_STATUS_LED, LOW);
+  delay(100);
+  digitalWrite(MOVEMENT_STATUS_LED, LOW);
+  // End startup light show
 
   lastSpeedSensorStatus = mux.readDigitalValue(MultiplexerInput::TurntableSpeedSensor);
   currSpeedSensorStatus = lastSpeedSensorStatus;
@@ -113,15 +124,15 @@ void setup() {
   // If the turntable is turned on to "automatic," then home the whole tonearm if it is not already home.
   if(mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) == AutoManualSwitchPosition::Automatic && 
     !mux.readDigitalValue(MultiplexerInput::HorizontalHomeOpticalSensor)) {
-    currentMovementStatus = homeTonearm();
+    currentMovementStatus = homeRoutine();
 
     if(currentMovementStatus != ErrorCode::Success) {
       setErrorState(currentMovementStatus);
     }
   }
 
-  // Otherwise, we only want to home the vertical axis, which will drop the tonearm in its current location.
-  else {
+  // Otherwise, we only want to home the vertical axis if it is not already homed, which will drop the tonearm in its current location.
+  else if(!mux.readDigitalValue(MultiplexerInput::VerticalLowerLimit)) {
     if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, MOVEMENT_TIMEOUT_STEPS))
       setErrorState(ErrorCode::VerticalHomeError);
   }
@@ -147,7 +158,7 @@ void loop() {
     if(mux.readDigitalValue(getActivePlaySensor())) 
       currentMovementStatus = playRoutine();
     else 
-      currentMovementStatus = homeTonearm();
+      currentMovementStatus = homeRoutine();
 
     if(currentMovementStatus != ErrorCode::Success) {
       setErrorState(currentMovementStatus);
@@ -156,7 +167,7 @@ void loop() {
   calculateTurntableSpeed();
 }
 
-ErrorCode homeTonearm() {
+ErrorCode homeRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
   currentHorizontalCalibration = 0; //getHorizontalSensorCalibration(MultiplexerInput::HorizontalHomeOpticalSensor);
