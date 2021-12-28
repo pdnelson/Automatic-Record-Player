@@ -401,11 +401,9 @@ void blinkLed(int led, int interval) {
   // Only blink until a button is pressed.
   // TODO: Make this not require holding the button until the interval has elapsed.
   while(!mux.readDigitalValue(MultiplexerInput::PauseButton) && !mux.readDigitalValue(MultiplexerInput::PlayHomeButton)) {
-    digitalWrite(PAUSE_STATUS_LED, LOW);
-    digitalWrite(MOVEMENT_STATUS_LED, LOW);
+    digitalWrite(led, LOW);
     delay(interval);
-    digitalWrite(PAUSE_STATUS_LED, HIGH);
-    digitalWrite(MOVEMENT_STATUS_LED, HIGH);
+    digitalWrite(led, HIGH);
     delay(interval);
   }
 
