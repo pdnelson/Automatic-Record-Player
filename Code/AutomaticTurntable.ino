@@ -22,7 +22,7 @@
 #define MOTOR_PIN2 8
 #define MOTOR_PIN3 9
 #define MOTOR_PIN4 10
-Stepper TonearmMotor = Stepper(STEPS_PER_REVOLUTION, MOTOR_PIN1, MOTOR_PIN3, MOTOR_PIN2, MOTOR_PIN4);
+Stepper TonearmMotor = Stepper(STEPS_PER_REVOLUTION, MOTOR_PIN4, MOTOR_PIN2, MOTOR_PIN3, MOTOR_PIN1);
 
 // This is the pin used to select which motor we are moving, using the demultiplexer.
 #define MOTOR_AXIS_SELECTOR 11
@@ -215,6 +215,8 @@ ErrorCode playRoutine() {
 
   if(!moveTonearmToSensor(MotorAxis::Vertical, MultiplexerInput::VerticalLowerLimit, 8, MOVEMENT_TIMEOUT_STEPS))
     return ErrorCode::VerticalHomeError;
+
+  horizontalRelativeMove(20);
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
   

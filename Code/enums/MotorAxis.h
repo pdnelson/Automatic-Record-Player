@@ -5,10 +5,10 @@
 enum MotorAxis : uint8_t {
 
     // Motor that controls the vertical tonearm movement.
-    Vertical = 0x0,
+    Vertical = 0x1,
 
     // Motor that controls the horizontal tonearm movement.
-    Horizontal = 0x1
+    Horizontal = 0x0
 };
 
 #endif
