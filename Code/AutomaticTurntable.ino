@@ -1,5 +1,6 @@
 #include <Stepper.h>
 #include <Multiplexer.h>
+#include "headers/AutomaticTurntable.h"
 #include "enums/MultiplexerInput.h"
 #include "enums/ErrorCode.h"
 #include "enums/MotorAxis.h"
