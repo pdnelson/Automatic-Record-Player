@@ -12,7 +12,8 @@
     ErrorCode playRoutine();
 
     // Tonearm movement
-    bool moveTonearmToSensor(MotorAxis axis, MultiplexerInput destinationSensor, uint8_t speed, unsigned int timeout, unsigned int calibration = 0);
+    bool moveTonearmHorizontally(MotorAxis axis, MultiplexerInput destinationSensor, uint8_t speed, unsigned int timeout, unsigned int calibration);
+    bool moveTonearmVertically(MultiplexerInput destinationSensor, uint8_t speed, unsigned int timeout);
     void horizontalRelativeMove(int steps);
     void releaseCurrentFromMotors();
 
