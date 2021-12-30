@@ -81,8 +81,6 @@ bool lastSpeedSensorStatus;
 #define CALIBRATION_POT_7IN A0
 #define CALIBRATION_POT_10IN A1
 #define CALIBRATION_POT_12IN A2
-#define CALIBRATION_POT_HOME A3
-#define CALIBRATION_POT_PICKUP A6
 
 int currentHorizontalCalibration = 0;
 MultiplexerInput currentPlaySensor;
@@ -97,8 +95,6 @@ void setup() {
   pinMode(CALIBRATION_POT_7IN, INPUT);
   pinMode(CALIBRATION_POT_10IN, INPUT);
   pinMode(CALIBRATION_POT_12IN, INPUT);
-  pinMode(CALIBRATION_POT_HOME, INPUT);
-  pinMode(CALIBRATION_POT_PICKUP, INPUT);
 
   mux.setDelayMicroseconds(10);
 
@@ -378,12 +374,6 @@ unsigned int getHorizontalSensorCalibration(MultiplexerInput sensor) {
 
   else if(sensor == MultiplexerInput::HorizontalPlay12InchOpticalSensor)
     return analogRead(CALIBRATION_POT_12IN);
-
-  else if(sensor == MultiplexerInput::HorizontalHomeOpticalSensor)
-    return analogRead(CALIBRATION_POT_HOME);
-
-  else if(sensor == MultiplexerInput::HorizontalPickupOpticalSensor)
-    return analogRead(CALIBRATION_POT_PICKUP);
 
   else
     return 0;
