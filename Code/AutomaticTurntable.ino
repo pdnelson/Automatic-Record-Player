@@ -154,9 +154,9 @@ void loop() {
    (!mux.readDigitalValue(MultiplexerInput::HorizontalPickupOpticalSensor) && 
      mux.readDigitalValue(MultiplexerInput::AutoManualSwitch))) {
 
-    // If the tonearm is past the location of the play sensor, then this button will home it. Otherwise, it will execute
+    // If the tonearm is past the location of the home sensor, then this button will home it. Otherwise, it will execute
     // the play routine.
-    if(mux.readDigitalValue(getActivePlaySensor())) 
+    if(mux.readDigitalValue(MultiplexerInput::HorizontalHomeOpticalSensor)) 
       currentMovementStatus = playRoutine();
     else 
       currentMovementStatus = homeRoutine();

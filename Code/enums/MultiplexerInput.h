@@ -64,10 +64,10 @@ enum MultiplexerInput : uint8_t {
     // S13
     TurntableSpeedSensor = 12,
 
-    // This is a command pin that can only be set high by the automatic changer. It is only intended to be used when the turntable is in error,
-    // otherwise its status is meaningless.
+    // This is a button that the user can press that will display, numerically, the value of an analog potentiometer that corresponds with the current
+    // record size that is selected.
     // S14
-    ClearErrorAndHome = 13
+    DisplayCalibrationValue = 13
 };
 
 #endif
