@@ -47,25 +47,11 @@ Multiplexer mux = Multiplexer(MUX_OUTPUT, MUX_SELECTOR_A, MUX_SELECTOR_B, MUX_SE
 // The motors used in this project are 28BYJ-48 stepper motors, which I've found to cap at 11 RPM 
 // before becoming too unreliable. 8 or 9 I've found to be a good balance for speed and reliability at 5v DC.
 #define DEFAULT_MOVEMENT_RPM 8
-uint8_t tonearmMovementRpm = DEFAULT_MOVEMENT_RPM;
 
 // These are timeouts used for error checking, so the hardware doesn't damage itself.
 // Essentially, if the steps exceed this number and the motor has not yet reached its
 // destination, an error has occurred.
 #define MOVEMENT_TIMEOUT_STEPS 1000
-
-// Step counts used for error checking. We will have an idea of how many steps a movement should take,
-// so here we are keeping track of those so we know it doesn't exceed the limits defined above.
-unsigned int movementStepCount;
-
-// The direction the tonearm is currently moving.
-TonearmMovementDirection movementDirection;
-
-// Whether the current sensor that the tonearm is moving toward is HIGH or LOW.
-bool currentSensorStatus = false;
-
-// Whether the last movement succeeded or failed (and how).
-ErrorCode currentMovementStatus;
 
 // All of these fields are used to calculate the speed that the turntable is spinning.
 Adafruit_7segment speedDisplay = Adafruit_7segment();
@@ -86,9 +72,6 @@ bool currDisplayOption;
 #define CALIBRATION_POT_7IN A0
 #define CALIBRATION_POT_10IN A1
 #define CALIBRATION_POT_12IN A2
-
-int currentHorizontalCalibration = 0;
-MultiplexerInput currentPlaySensor;
 
 void setup() {
   Serial.begin(SERIAL_SPEED);
@@ -121,37 +104,35 @@ void setup() {
   lastDisplayOption = mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue);
   currDisplayOption = lastDisplayOption;
 
-  currentPlaySensor = getActivePlaySensor();
+  ErrorCode currentMovementStatus = ErrorCode::None;
 
   // If the turntable is turned on to "automatic," then home the whole tonearm if it is not already home.
   if(mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) == AutoManualSwitchPosition::Automatic && 
     !mux.readDigitalValue(MultiplexerInput::HorizontalHomeOpticalSensor)) {
-    currentMovementStatus = homeRoutine();
-
-    if(currentMovementStatus != ErrorCode::Success) {
-      setErrorState(currentMovementStatus);
-    }
+    ErrorCode currentMovementStatus = homeRoutine();
   }
 
   // Otherwise, we only want to home the vertical axis if it is not already homed, which will drop the tonearm in its current location.
   else if(!mux.readDigitalValue(MultiplexerInput::VerticalLowerLimit)) {
     if(!moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS))
-      setErrorState(ErrorCode::VerticalHomeError);
+      currentMovementStatus = ErrorCode::VerticalHomeError;
+  }
+
+  if(currentMovementStatus != ErrorCode::Success && currentMovementStatus != ErrorCode::None) {
+    setErrorState(currentMovementStatus);
   }
 }
 
 // This sits and waits for any of the command buttons to be pressed.
 // As soon as a button is pressed, the corresponding command routine is executed.
 void loop() {
+  ErrorCode currentMovementStatus = ErrorCode::None;
+
   if(mux.readDigitalValue(MultiplexerInput::PauseButton)) {
     currentMovementStatus = pauseAndWaitUntilUnpaused();
-
-    if(currentMovementStatus != ErrorCode::Success) {
-      setErrorState(currentMovementStatus);
-    }
   }
   
-  if(mux.readDigitalValue(MultiplexerInput::PlayHomeButton) ||
+  else if(mux.readDigitalValue(MultiplexerInput::PlayHomeButton) ||
    (!mux.readDigitalValue(MultiplexerInput::HorizontalPickupOpticalSensor) && 
      mux.readDigitalValue(MultiplexerInput::AutoManualSwitch))) {
 
@@ -161,22 +142,24 @@ void loop() {
       currentMovementStatus = playRoutine();
     else 
       currentMovementStatus = homeRoutine();
+  }
 
-    if(currentMovementStatus != ErrorCode::Success) {
-      setErrorState(currentMovementStatus);
-    }
+  if(currentMovementStatus != ErrorCode::Success && currentMovementStatus != ErrorCode::None) {
+    setErrorState(currentMovementStatus);
   }
 
   // If the calibration button is being pressed, display the current value of the active potentiometer
   if(currDisplayOption = mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue)) {
-    getActiveSensorCalibration();
-    speedDisplay.print((double)currentHorizontalCalibration);
+    
+    // Must cast this to double because, for some reason, since every other value I've been sending to the display
+    // has been doubles, it only lets me write double values. Is it a bug on my end? I'm not sure, but this works.
+    speedDisplay.print((double)getActiveSensorCalibration());
     speedDisplay.writeDisplay();
   }
 
   // Otherwise, display the turntable speed
   else {
-    calculateTurntableSpeed();
+    calculateTurntableSpeedAndPrintToDisplay();
   }
   lastDisplayOption = currDisplayOption;
 }
@@ -184,12 +167,11 @@ void loop() {
 ErrorCode homeRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
-  currentHorizontalCalibration = -100; //getHorizontalSensorCalibration(MultiplexerInput::HorizontalHomeOpticalSensor);
-
   if(!moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS))
     return ErrorCode::VerticalPickupError;
 
-  if(!moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOpticalSensor, MOVEMENT_TIMEOUT_STEPS, currentHorizontalCalibration, 7))
+  // -200 calibration to push the tonearm past the home sensor, into the homing mount
+  if(!moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOpticalSensor, MOVEMENT_TIMEOUT_STEPS, -200, 7))
     return ErrorCode::HorizontalHomeError;
 
   if(!moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS))
@@ -218,15 +200,17 @@ ErrorCode pauseAndWaitUntilUnpaused() {
     }
   }
 
+  uint8_t tonearmSetRpm = 0;
+
   // If the tonearm is hovering over home position, then just go down at default speed
   if(mux.readDigitalValue(MultiplexerInput::HorizontalHomeOpticalSensor)) {
-    tonearmMovementRpm = DEFAULT_MOVEMENT_RPM;
+    tonearmSetRpm = DEFAULT_MOVEMENT_RPM;
   }
 
   // Otherwise, set it down carefully
-  else tonearmMovementRpm = 3;
+  else tonearmSetRpm = 3;
 
-  if(!moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, tonearmMovementRpm))
+  if(!moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, tonearmSetRpm))
     return ErrorCode::VerticalHomeError;
 
   digitalWrite(PAUSE_STATUS_LED, LOW);
@@ -237,13 +221,10 @@ ErrorCode pauseAndWaitUntilUnpaused() {
 ErrorCode playRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
-  currentPlaySensor = getActivePlaySensor();
-  getActiveSensorCalibration();
-
   if(!moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS))
     return ErrorCode::VerticalPickupError;
 
-  if(!moveTonearmHorizontally(currentPlaySensor, MOVEMENT_TIMEOUT_STEPS, currentHorizontalCalibration, 4))
+  if(!moveTonearmHorizontally(getActivePlaySensor(), MOVEMENT_TIMEOUT_STEPS, getActiveSensorCalibration(), 4))
     return ErrorCode::PlayError;
 
   if(!moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, 4))
@@ -269,11 +250,11 @@ bool moveTonearmHorizontally(MultiplexerInput destinationSensor, unsigned int ti
     }
 
     TonearmMotor.setSpeed(speed);
-    movementStepCount = 0;
+    unsigned int movementStepCount = 0;
     digitalWrite(MOTOR_AXIS_SELECTOR, MotorAxis::Horizontal);
 
-    currentSensorStatus = mux.readDigitalValue(destinationSensor); 
-    movementDirection = currentSensorStatus ? TonearmMovementDirection::Clockwise : TonearmMovementDirection::Counterclockwise;
+    bool currentSensorStatus = mux.readDigitalValue(destinationSensor); 
+    TonearmMovementDirection movementDirection = currentSensorStatus ? TonearmMovementDirection::Clockwise : TonearmMovementDirection::Counterclockwise;
 
     digitalWrite(HORIZONTAL_GEARING_SOLENOID, HIGH);
 
@@ -300,6 +281,8 @@ bool moveTonearmHorizontally(MultiplexerInput destinationSensor, unsigned int ti
 
 bool moveTonearmVertically(MultiplexerInput destinationSensor, unsigned int timeout, uint8_t speed = DEFAULT_MOVEMENT_RPM) {
 
+  TonearmMovementDirection movementDirection = TonearmMovementDirection::NoDirection;
+
   // Only perform the operation if the tonearm is not already at its destination.
   if(!mux.readDigitalValue(destinationSensor)) {
     if(destinationSensor == MultiplexerInput::VerticalLowerLimit) {
@@ -314,7 +297,7 @@ bool moveTonearmVertically(MultiplexerInput destinationSensor, unsigned int time
     }
 
     TonearmMotor.setSpeed(speed);
-    movementStepCount = 0;
+    unsigned int movementStepCount = 0;
     digitalWrite(MOTOR_AXIS_SELECTOR, MotorAxis::Vertical);
 
     // Move the vertical axis until it reaches its destination
@@ -347,12 +330,12 @@ void releaseCurrentFromMotors() {
 // counter-clockwise. This is a blind movement, meaning there is no check at the end that the tonearm successfully moved all
 // steps. This is only intended to be used for calibration offsets, and moving a few steps to unlock gears.
 void horizontalRelativeMove(int steps, uint8_t speed = DEFAULT_MOVEMENT_RPM) {
-  movementStepCount = 0;
+  unsigned int movementStepCount = 0;
 
   digitalWrite(MOTOR_AXIS_SELECTOR, MotorAxis::Horizontal);
   TonearmMotor.setSpeed(speed);
 
-  movementDirection = (steps > 0) ? TonearmMovementDirection::Clockwise : TonearmMovementDirection::Counterclockwise;
+  TonearmMovementDirection movementDirection = (steps > 0) ? TonearmMovementDirection::Clockwise : TonearmMovementDirection::Counterclockwise;
   steps = abs(steps);
 
   while(movementStepCount++ < steps) {
@@ -382,32 +365,35 @@ MultiplexerInput getActivePlaySensor() {
 // The returned value will be the number of steps (clockwise or counterclockwise) that the horizontal motor should move.
 // Pickup calibration return value is expressed in number of seconds that should be waited before the homing routine is
 // executed at the end of a record.
-void getActiveSensorCalibration() {
+unsigned int getActiveSensorCalibration() {
+  int calibration = 0;
+
     // If only RecordSizeSelector1 is HIGH (or BOTH RecordSelector1 and 2 are HIGH), we are using the 7" sensor
   if(mux.readDigitalValue(MultiplexerInput::RecordSizeSelector1))
-    currentHorizontalCalibration = analogRead(CALIBRATION_POT_7IN); 
+    calibration = analogRead(CALIBRATION_POT_7IN); 
 
   // If only RecordSizeSelector2 is HIGH, we are using the 12" sensor
   else if (mux.readDigitalValue(MultiplexerInput::RecordSizeSelector2))
-    currentHorizontalCalibration = analogRead(CALIBRATION_POT_12IN);
+    calibration = analogRead(CALIBRATION_POT_12IN);
 
   // If NEITHER RecordSizeSelectors are HIGH, we are using the 10" sensor
-  else currentHorizontalCalibration = analogRead(CALIBRATION_POT_10IN);
+  else calibration = analogRead(CALIBRATION_POT_10IN);
 
-  // I only have 10k pots, so let's make 'em work
-  currentHorizontalCalibration = (currentHorizontalCalibration - 615) * 50 / 409;
+  // I only have 10k pots, which ranges between 615-1023, and I only want to allow
+  // values between 0 and 50
+  calibration = (calibration - 615) * 50 / 408;
 
-  //Serial.println(currentHorizontalCalibration);
+  if(calibration < 0) 
+    calibration = 0;
 
-  if(currentHorizontalCalibration < 0) 
-    currentHorizontalCalibration = 0;
+  else if(calibration > 50) 
+    calibration = 50;
 
-  else if(currentHorizontalCalibration > 50) 
-    currentHorizontalCalibration = 50;
+  return calibration;
 }
 
 // This function will calculate the speed of the turntable 8 times per rotation.
-void calculateTurntableSpeed() {
+void calculateTurntableSpeedAndPrintToDisplay() {
   currSpeedSensorStatus = mux.readDigitalValue(MultiplexerInput::TurntableSpeedSensor);
   
   if(currSpeedSensorStatus != lastSpeedSensorStatus) {

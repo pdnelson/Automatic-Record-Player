@@ -14,7 +14,10 @@ enum TonearmMovementDirection : int8_t {
     Positive = 1,
 
     // The tonearm is moving down vertically.
-    Negative = -1
+    Negative = -1,
+
+    // The value has not been set yet.
+    NoDirection = 0
 };
 
 #endif

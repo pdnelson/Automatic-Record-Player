@@ -17,7 +17,10 @@ enum ErrorCode : uint8_t {
     PlayError,
 
     // The movement succeeded.
-    Success
+    Success,
+
+    // No status was set yet.
+    None
 };
 
 #endif

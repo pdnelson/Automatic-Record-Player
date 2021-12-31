@@ -19,10 +19,10 @@
 
     // Status/settings
     MultiplexerInput getActivePlaySensor();
-    void getActiveSensorCalibration();
+    unsigned int getActiveSensorCalibration();
 
     // Turntable speed
-    void calculateTurntableSpeed();
+    void calculateTurntableSpeedAndPrintToDisplay();
 
     // Error handling
     void setErrorState(ErrorCode errorCode);
