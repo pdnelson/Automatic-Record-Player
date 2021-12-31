@@ -19,7 +19,7 @@
 
     // Status/settings
     MultiplexerInput getActivePlaySensor();
-    unsigned int getHorizontalSensorCalibration(MultiplexerInput sensor);
+    void getActiveSensorCalibration();
 
     // Turntable speed
     void calculateTurntableSpeed();

@@ -76,6 +76,11 @@ unsigned long lastMillis = millis();
 bool currSpeedSensorStatus;
 bool lastSpeedSensorStatus;
 
+// This is used to tell us if the user viewed the sensor calibration from the 7-segment display or 
+// the turntable speed
+bool lastDisplayOption;
+bool currDisplayOption;
+
 // Calibration potentiometers are used to move the tonearm a few steps past the sensor, so that the user has an easy way
 // to fine-tune where exactly it should be set down (or picked up)
 #define CALIBRATION_POT_7IN A0
@@ -92,9 +97,6 @@ void setup() {
   pinMode(HORIZONTAL_GEARING_SOLENOID, OUTPUT);
   pinMode(MOVEMENT_STATUS_LED, OUTPUT);
   pinMode(PAUSE_STATUS_LED, OUTPUT);
-  pinMode(CALIBRATION_POT_7IN, INPUT);
-  pinMode(CALIBRATION_POT_10IN, INPUT);
-  pinMode(CALIBRATION_POT_12IN, INPUT);
 
   mux.setDelayMicroseconds(10);
 
@@ -115,6 +117,9 @@ void setup() {
 
   lastSpeedSensorStatus = mux.readDigitalValue(MultiplexerInput::TurntableSpeedSensor);
   currSpeedSensorStatus = lastSpeedSensorStatus;
+
+  lastDisplayOption = mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue);
+  currDisplayOption = lastDisplayOption;
 
   currentPlaySensor = getActivePlaySensor();
 
@@ -161,7 +166,19 @@ void loop() {
       setErrorState(currentMovementStatus);
     }
   }
-  calculateTurntableSpeed();
+
+  // If the calibration button is being pressed, display the current value of the active potentiometer
+  if(currDisplayOption = mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue)) {
+    getActiveSensorCalibration();
+    speedDisplay.print((double)currentHorizontalCalibration);
+    speedDisplay.writeDisplay();
+  }
+
+  // Otherwise, display the turntable speed
+  else {
+    calculateTurntableSpeed();
+  }
+  lastDisplayOption = currDisplayOption;
 }
 
 ErrorCode homeRoutine() {
@@ -221,7 +238,7 @@ ErrorCode playRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
   currentPlaySensor = getActivePlaySensor();
-  currentHorizontalCalibration = 0; //getHorizontalSensorCalibration(currentPlaySensor);
+  getActiveSensorCalibration();
 
   if(!moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS))
     return ErrorCode::VerticalPickupError;
@@ -365,18 +382,28 @@ MultiplexerInput getActivePlaySensor() {
 // The returned value will be the number of steps (clockwise or counterclockwise) that the horizontal motor should move.
 // Pickup calibration return value is expressed in number of seconds that should be waited before the homing routine is
 // executed at the end of a record.
-unsigned int getHorizontalSensorCalibration(MultiplexerInput sensor) {
-  if(sensor == MultiplexerInput::HorizontalPlay7InchOpticalSensor)
-    return analogRead(CALIBRATION_POT_7IN);
+void getActiveSensorCalibration() {
+    // If only RecordSizeSelector1 is HIGH (or BOTH RecordSelector1 and 2 are HIGH), we are using the 7" sensor
+  if(mux.readDigitalValue(MultiplexerInput::RecordSizeSelector1))
+    currentHorizontalCalibration = analogRead(CALIBRATION_POT_7IN); 
 
-  else if(sensor == MultiplexerInput::HorizontalPlay10InchOpticalSensor)
-    return analogRead(CALIBRATION_POT_10IN);
+  // If only RecordSizeSelector2 is HIGH, we are using the 12" sensor
+  else if (mux.readDigitalValue(MultiplexerInput::RecordSizeSelector2))
+    currentHorizontalCalibration = analogRead(CALIBRATION_POT_12IN);
 
-  else if(sensor == MultiplexerInput::HorizontalPlay12InchOpticalSensor)
-    return analogRead(CALIBRATION_POT_12IN);
+  // If NEITHER RecordSizeSelectors are HIGH, we are using the 10" sensor
+  else currentHorizontalCalibration = analogRead(CALIBRATION_POT_10IN);
 
-  else
-    return 0;
+  // I only have 10k pots, so let's make 'em work
+  currentHorizontalCalibration = (currentHorizontalCalibration - 615) * 50 / 409;
+
+  //Serial.println(currentHorizontalCalibration);
+
+  if(currentHorizontalCalibration < 0) 
+    currentHorizontalCalibration = 0;
+
+  else if(currentHorizontalCalibration > 50) 
+    currentHorizontalCalibration = 50;
 }
 
 // This function will calculate the speed of the turntable 8 times per rotation.
@@ -385,7 +412,7 @@ void calculateTurntableSpeed() {
   
   if(currSpeedSensorStatus != lastSpeedSensorStatus) {
     currMillis = millis();
-    currSpeed = 60000 / (double)((currMillis - lastMillis) << 3);
+    currSpeed = 60000 / (double)((currMillis - lastMillis) << 3); // Calculate RPM 8 times per rotation
     
     // Only re-write the display if the display will change
     if(abs(lastSpeed - currSpeed) > 0.009) {
@@ -398,7 +425,8 @@ void calculateTurntableSpeed() {
   }
 
   // If 1 second elapses without a sensor change, we can assume that the turntable has stopped.
-  else if(millis() - currMillis > 1000 && lastSpeed > 0.0) {
+  // Also, re-write the display as 0 if the user releases the display button (changing from displaying calibration steps back to RPM)
+  else if((millis() - currMillis > 1000 && lastSpeed > 0.0) || currDisplayOption != lastDisplayOption) {
     speedDisplay.print(0.0);
     speedDisplay.writeDisplay();
     lastSpeed = 0.0;
