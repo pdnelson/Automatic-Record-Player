@@ -99,7 +99,7 @@ void setup() {
   sevSeg.print("JHI");
   sevSeg.writeDisplay();
 
-  // Began startup light show
+  // Begin startup light show
   delay(100);
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
   delay(100);
@@ -132,16 +132,16 @@ void setup() {
 }
 
 void loop() {
+  // We always want to make sure the solenoid is not being powered when a command is not executing. There are some bugs that are mostly out of my control
+  // that may cause the solenoid to become HIGH, for example, unplugging the USB from the Arduino can sometimes alter the state of the software.
+  digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
+
   monitorCommandButtons();
   updateSevenSegmentDisplay();
 }
 
 // When a command button is pressed (i.e. Home/Play, or Pause/Unpause), then its respective command will be executed.
 void monitorCommandButtons() {
-  // We always want to make sure the solenoid is not being powered when a command is not executing. There are some bugs that are mostly out of my control
-  // that may cause the solenoid to become HIGH, for example, unplugging the USB from the Arduino can sometimes alter the state of the software.
-  digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
-
   MovementResult currentMovementStatus = MovementResult::None;
 
   if(mux.readDigitalValue(MultiplexerInput::PauseButton)) {
@@ -233,8 +233,6 @@ MovementResult homeRoutine() {
   return result;
 }
 
-// This is the pause routine that will lift up the tonearm from the record until the user "unpauses" by pressing the
-// pause button again
 MovementResult pauseOrUnpause() {
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
   digitalWrite(PAUSE_STATUS_LED, HIGH);
@@ -266,8 +264,6 @@ MovementResult pauseOrUnpause() {
   return result;
 }
 
-// This uses RecordSizeSelector1 and RecordSizeSelector2 to determine the record size the user
-// currently has selected.
 MultiplexerInput getActivePlaySensor() {
 
   // If only RecordSizeSelector1 is HIGH, we are using the 7" sensor
@@ -282,10 +278,6 @@ MultiplexerInput getActivePlaySensor() {
   return MultiplexerInput::HorizontalPlay10InchOpticalSensor;
 }
 
-// Returns the calibration step offset for the given sensor.
-// The returned value will be the number of steps (clockwise or counterclockwise) that the horizontal motor should move.
-// Pickup calibration return value is expressed in number of seconds that should be waited before the homing routine is
-// executed at the end of a record.
 unsigned int getActiveSensorCalibration() {
   int calibration = 0;
 
@@ -313,7 +305,6 @@ unsigned int getActiveSensorCalibration() {
   return calibration;
 }
 
-// This function will calculate the speed of the turntable 8 times per rotation.
 double calculateTurntableSpeed(double lastValue) {
   currSpeedSensorStatus = mux.readDigitalValue(MultiplexerInput::TurntableSpeedSensor);
   double currSpeed = lastValue;
@@ -329,14 +320,12 @@ double calculateTurntableSpeed(double lastValue) {
   return currSpeed;
 }
 
-// This stops all movement and sets the turntable in an error state to prevent damage.
-// This will be called if a motor stall has been detected.
 void setErrorState(MovementResult movementResult) {
   digitalWrite(PAUSE_STATUS_LED, HIGH);
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
   sevSeg.clear();
-  sevSeg.writeDigitNum(3, movementResult, false);
+  sevSeg.writeDigitNum(0, movementResult, false);
   sevSeg.writeDisplay();
 
   // Wait for the user to press the Play/Home or Pause/Unpause buttons to break out of the error state
