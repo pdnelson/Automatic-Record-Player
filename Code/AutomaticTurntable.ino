@@ -2,7 +2,7 @@
 #include <Multiplexer.h>
 #include "headers/AutomaticTurntable.h"
 #include "enums/MultiplexerInput.h"
-#include "enums/ErrorCode.h"
+#include "enums/MovementResult.h"
 #include "enums/AutoManualSwitchPosition.h"
 #include "TonearmMovementController.h"
 
@@ -114,12 +114,12 @@ void setup() {
   lastDisplayOption = mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue);
   currDisplayOption = lastDisplayOption;
 
-  ErrorCode currentMovementStatus = ErrorCode::None;
+  MovementResult currentMovementStatus = MovementResult::None;
 
   // If the turntable is turned on to "automatic," then home the whole tonearm if it is not already home.
   if(mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) == AutoManualSwitchPosition::Automatic && 
     !mux.readDigitalValue(MultiplexerInput::HorizontalHomeOpticalSensor)) {
-    ErrorCode currentMovementStatus = homeRoutine();
+    MovementResult currentMovementStatus = homeRoutine();
   }
 
   // Otherwise, we only want to home the vertical axis if it is not already homed, which will drop the tonearm in its current location.
@@ -127,7 +127,7 @@ void setup() {
       currentMovementStatus = pauseOrUnpause();
   }
 
-  if(currentMovementStatus != ErrorCode::Success && currentMovementStatus != ErrorCode::None) {
+  if(currentMovementStatus != MovementResult::Success && currentMovementStatus != MovementResult::None) {
     setErrorState(currentMovementStatus);
   }
 }
@@ -137,7 +137,7 @@ void loop() {
   // that may cause the solenoid to become HIGH, for example, unplugging the USB from the Arduino can sometimes alter the state of the software.
   digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
 
-  ErrorCode currentMovementStatus = ErrorCode::None;
+  MovementResult currentMovementStatus = MovementResult::None;
 
   if(mux.readDigitalValue(MultiplexerInput::PauseButton)) {
     currentMovementStatus = pauseOrUnpause();
@@ -155,7 +155,7 @@ void loop() {
       currentMovementStatus = homeRoutine();
   }
 
-  if(currentMovementStatus != ErrorCode::Success && currentMovementStatus != ErrorCode::None) {
+  if(currentMovementStatus != MovementResult::Success && currentMovementStatus != MovementResult::None) {
     setErrorState(currentMovementStatus);
   }
 
@@ -166,6 +166,8 @@ void loop() {
     // has been doubles, it only lets me write double values. Is it a bug on my end? I'm not sure, but this works.
     speedDisplay.print((double)getActiveSensorCalibration());
     speedDisplay.writeDisplay();
+    
+    if(lastSpeed == 0.0) lastSpeed = 0.000001; // Force turntable speed to refresh on next iteration
   }
 
   // Otherwise, display the turntable speed
@@ -175,37 +177,64 @@ void loop() {
   lastDisplayOption = currDisplayOption;
 }
 
-ErrorCode homeRoutine() {
+MovementResult playRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
   digitalWrite(PAUSE_STATUS_LED, LOW);
 
-  if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM))
-    return ErrorCode::VerticalPickupError;
+  MovementResult result = MovementResult::None;
+
+  int calibration = getActiveSensorCalibration();
+
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
+  if(result != MovementResult::Success) return result;
+
+  result = tonearmController.moveTonearmHorizontally(getActivePlaySensor(), MOVEMENT_TIMEOUT_STEPS, calibration, 4);
+  if(result != MovementResult::Success) return result;
+
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, 4);
+  if(result != MovementResult::Success) return result;
+
+  tonearmController.horizontalRelativeMove(100, DEFAULT_MOVEMENT_RPM);
+
+  digitalWrite(MOVEMENT_STATUS_LED, LOW);
+  
+  return result;
+}
+
+MovementResult homeRoutine() {
+  digitalWrite(MOVEMENT_STATUS_LED, HIGH);
+  digitalWrite(PAUSE_STATUS_LED, LOW);
+
+  MovementResult result = MovementResult::None;
+
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
+  if(result != MovementResult::Success) return result;
 
   // -200 calibration to push the tonearm past the home sensor, into the homing mount
-  if(!tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOpticalSensor, MOVEMENT_TIMEOUT_STEPS, -200, 7))
-    return ErrorCode::HorizontalHomeError;
+  result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOpticalSensor, MOVEMENT_TIMEOUT_STEPS, -200, 7);
+  if(result != MovementResult::Success) return result;
 
-  if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM))
-    return ErrorCode::VerticalHomeError;
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
+  if(result != MovementResult::Success) return result;
 
   tonearmController.horizontalRelativeMove(200, DEFAULT_MOVEMENT_RPM);
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
 
-  return ErrorCode::Success;
+  return result;
 }
 
 // This is the pause routine that will lift up the tonearm from the record until the user "unpauses" by pressing the
 // pause button again
-ErrorCode pauseOrUnpause() {
+MovementResult pauseOrUnpause() {
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
   digitalWrite(PAUSE_STATUS_LED, HIGH);
 
+  MovementResult result = MovementResult::None;
+
   // If the vertical lower limit is pressed (i.e., the tonearm is vertically homed), then move it up
   if(mux.readDigitalValue(MultiplexerInput::VerticalLowerLimit)) {
-    if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM))
-      return ErrorCode::VerticalPickupError;
+    result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
   }
 
   // Otherwise, just move it down and then shut off the LED
@@ -220,33 +249,12 @@ ErrorCode pauseOrUnpause() {
     // Otherwise, set it down carefully
     else tonearmSetRpm = 3;
 
-    if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, tonearmSetRpm))
-      return ErrorCode::VerticalHomeError;
+    result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, tonearmSetRpm);
 
     digitalWrite(PAUSE_STATUS_LED, LOW);
   }
 
-  return ErrorCode::Success;
-}
-
-ErrorCode playRoutine() {
-  digitalWrite(MOVEMENT_STATUS_LED, HIGH);
-  digitalWrite(PAUSE_STATUS_LED, LOW);
-
-  if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM))
-    return ErrorCode::VerticalPickupError;
-
-  if(!tonearmController.moveTonearmHorizontally(getActivePlaySensor(), MOVEMENT_TIMEOUT_STEPS, getActiveSensorCalibration(), 4))
-    return ErrorCode::PlayError;
-
-  if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, 4))
-    return ErrorCode::VerticalHomeError;
-
-  tonearmController.horizontalRelativeMove(100, DEFAULT_MOVEMENT_RPM);
-
-  digitalWrite(MOVEMENT_STATUS_LED, LOW);
-  
-  return ErrorCode::Success;
+  return result;
 }
 
 // This uses RecordSizeSelector1 and RecordSizeSelector2 to determine the record size the user
@@ -316,7 +324,7 @@ void calculateTurntableSpeedAndPrintToDisplay() {
 
   // If 1 second elapses without a sensor change, we can assume that the turntable has stopped.
   // Also, re-write the display as 0 if the user releases the display button (changing from displaying calibration steps back to RPM)
-  else if((millis() - currMillis > 1000 && lastSpeed > 0.0) || currDisplayOption != lastDisplayOption) {
+  else if((millis() - currMillis > 1000 && lastSpeed > 0.0)) {
     speedDisplay.print(0.0);
     speedDisplay.writeDisplay();
     lastSpeed = 0.0;
@@ -327,47 +335,17 @@ void calculateTurntableSpeedAndPrintToDisplay() {
 
 // This stops all movement and sets the turntable in an error state to prevent damage.
 // This will be called if a motor stall has been detected.
-// The user will have to restart the turntable if this occurs.
-void setErrorState(ErrorCode errorCode) {
-  digitalWrite(PAUSE_STATUS_LED, LOW);
-  digitalWrite(MOVEMENT_STATUS_LED, LOW);
+void setErrorState(MovementResult movementResult) {
+  digitalWrite(PAUSE_STATUS_LED, HIGH);
+  digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
-  switch(errorCode) {
+  speedDisplay.clear();
+  speedDisplay.writeDigitNum(3, movementResult, false);
+  speedDisplay.writeDisplay();
 
-    // Slow-blink pause LED.
-    case ErrorCode::VerticalHomeError:
-      blinkLed(PAUSE_STATUS_LED, 1000);
-      break;
+  // Wait for the user to press the Play/Home or Pause/Unpause buttons to break out of the error state
+  while(!mux.readDigitalValue(MultiplexerInput::PlayHomeButton) && !mux.readDigitalValue(MultiplexerInput::PauseButton)) { delay(1); }
 
-    // Fast-blink pause LED.
-    case ErrorCode::VerticalPickupError:
-      blinkLed(PAUSE_STATUS_LED, 150);
-      break;
-
-    // Slow-blink movement LED.
-    case ErrorCode::HorizontalHomeError:
-      blinkLed(MOVEMENT_STATUS_LED, 1000);
-      break;
-
-    // Fast-blink movement LED.
-    case ErrorCode::PlayError:
-      blinkLed(MOVEMENT_STATUS_LED, 150);
-      break;
-  }
-}
-
-// Blinks a specific LED indefinitely.
-// For use only with error codes.
-void blinkLed(int led, int interval) {
-
-  // Only blink until a button is pressed.
-  // TODO: Make this not require holding the button until the interval has elapsed.
-  while(!mux.readDigitalValue(MultiplexerInput::PauseButton) && !mux.readDigitalValue(MultiplexerInput::PlayHomeButton)) {
-    digitalWrite(led, LOW);
-    delay(interval);
-    digitalWrite(led, HIGH);
-    delay(interval);
-  }
-
-  digitalWrite(led, LOW);
+  speedDisplay.clear();
+  speedDisplay.writeDisplay();
 }

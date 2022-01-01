@@ -21,7 +21,7 @@ TonearmMovementController::TonearmMovementController(Multiplexer inputMux, uint8
 }
 
 // Moves the tonearm to a specified destination.
-bool TonearmMovementController::moveTonearmHorizontally(uint8_t destinationSensor, unsigned int timeout, int calibration, uint8_t speed) {
+MovementResult TonearmMovementController::moveTonearmHorizontally(uint8_t destinationSensor, unsigned int timeout, int calibration, uint8_t speed) {
     this->tonearmMotors.setSpeed(speed);
     unsigned int movementStepCount = 0;
     digitalWrite(this->motorSelectPin, MotorAxis::Horizontal);
@@ -39,7 +39,12 @@ bool TonearmMovementController::moveTonearmHorizontally(uint8_t destinationSenso
       if(movementStepCount++ >= timeout) {
         this->horizontalRelativeMove(200, 8); // Move clockwise to unlock horizontal gears
         digitalWrite(this->horizontalSolenoidPin, LOW);
-        return false;
+
+        if(movementDirection == TonearmMovementDirection::Clockwise)
+          return MovementResult::HorizontalClockwiseDirectionError;
+
+        else
+          return MovementResult::HorizontalCounterclockwiseDirectionError;
       }
     }
 
@@ -49,10 +54,10 @@ bool TonearmMovementController::moveTonearmHorizontally(uint8_t destinationSenso
 
     this->releaseCurrentFromMotors();
 
-    return true;
+    return MovementResult::Success;
 }
 
-bool TonearmMovementController::moveTonearmVertically(uint8_t destinationSensor, unsigned int timeout, uint8_t speed) {
+MovementResult TonearmMovementController::moveTonearmVertically(uint8_t destinationSensor, unsigned int timeout, uint8_t speed) {
 
   TonearmMovementDirection movementDirection = TonearmMovementDirection::NoDirection;
 
@@ -75,14 +80,18 @@ bool TonearmMovementController::moveTonearmVertically(uint8_t destinationSensor,
 
       // Timeout so that if the motor gets stuck, it does not get damaged.
       if(movementStepCount++ >= timeout) {
-        return false;
+        if(movementDirection == TonearmMovementDirection::Positive)
+          return MovementResult::VerticalPositiveDirectionError;
+
+        else
+          return MovementResult::VerticalNegativeDirectionError;
       }
     }
 
     this->releaseCurrentFromMotors();
   }
 
-  return true;
+  return MovementResult::Success;
 }
 
 void TonearmMovementController::horizontalRelativeMove(int steps, uint8_t speed) {

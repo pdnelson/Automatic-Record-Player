@@ -6,6 +6,7 @@
 #include <Multiplexer.h>
 #include "enums/MotorAxis.h"
 #include "enums/TonearmMovementDirection.h"
+#include "enums/MovementResult.h"
 
 #ifndef TonearmMovementController_h
 #define TonearmMovementController_h
@@ -32,13 +33,13 @@ class TonearmMovementController {
         // timeout - The number of steps that should be taken before an error occurs.
         // calibration - The number of steps that should be taken after the sensor is reached.
         // speed - The speed, in RPM, that the motor moving the tonearm should spin.
-        bool moveTonearmHorizontally(uint8_t destinationSensor, unsigned int timeout, int calibration, uint8_t speed);
+        MovementResult moveTonearmHorizontally(uint8_t destinationSensor, unsigned int timeout, int calibration, uint8_t speed);
         
         // Move the tonearm vertically until it reaches the destination limit switch.
         // destinationLimit - The limit switch that the tonearm is traveling to. This limit MUST be from the multiplexer passed through the constructor.
         // timeout - The number of steps that should be taken before an error occurs.
         // speed - The speed, in RPM, that the motor moving the tonearm should spin.
-        bool moveTonearmVertically(uint8_t destinationLimit, unsigned int timeout, uint8_t speed);
+        MovementResult moveTonearmVertically(uint8_t destinationLimit, unsigned int timeout, uint8_t speed);
         
         // Move the tonearm horizontally by the given step count. A positive value will move the tonearm clockwise, and a negative value
         // counter-clockwise. This is a blind movement, meaning there is no check at the end that the tonearm successfully moved all
@@ -50,7 +51,7 @@ class TonearmMovementController {
     private:        
         // Set all pins that the motor is using to LOW, as well as the motor demultiplexer.
         void releaseCurrentFromMotors();
-        
+
         // Multiplexer that we are reading all sensor values from
         Multiplexer inputMux;
 
