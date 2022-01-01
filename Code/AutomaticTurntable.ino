@@ -65,19 +65,21 @@ TonearmMovementController tonearmController = TonearmMovementController(
 // destination, an error has occurred.
 #define MOVEMENT_TIMEOUT_STEPS 1000
 
+// The 7-segment display is used for the following:
+// - Displaying the speed that the turntable is spinning.
+// - If the user is pressing the calibration button, displaying the current sensor's calibration value.
+// - Error codes if a movement fails.
+Adafruit_7segment sevSeg = Adafruit_7segment();
+
+// These fields are so we aren't writing to the 7-segment display so often
+double lastSevSegValue = 0.0;
+double currSevSegValue = 0.0;
+
 // All of these fields are used to calculate the speed that the turntable is spinning.
-Adafruit_7segment speedDisplay = Adafruit_7segment();
-double currSpeed = 0.0;
-double lastSpeed = 0.0;
 unsigned long currMillis = millis();
 unsigned long lastMillis = millis();
 bool currSpeedSensorStatus;
 bool lastSpeedSensorStatus;
-
-// This is used to tell us if the user viewed the sensor calibration from the 7-segment display or 
-// the turntable speed
-bool lastDisplayOption;
-bool currDisplayOption;
 
 // Calibration potentiometers are used to move the tonearm a few steps past the sensor, so that the user has an easy way
 // to fine-tune where exactly it should be set down (or picked up)
@@ -93,9 +95,9 @@ void setup() {
 
   mux.setDelayMicroseconds(10);
 
-  speedDisplay.begin(0x70);
-  speedDisplay.print("JHI");
-  speedDisplay.writeDisplay();
+  sevSeg.begin(0x70);
+  sevSeg.print("JHI");
+  sevSeg.writeDisplay();
 
   // Began startup light show
   delay(100);
@@ -110,9 +112,6 @@ void setup() {
 
   lastSpeedSensorStatus = mux.readDigitalValue(MultiplexerInput::TurntableSpeedSensor);
   currSpeedSensorStatus = lastSpeedSensorStatus;
-
-  lastDisplayOption = mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue);
-  currDisplayOption = lastDisplayOption;
 
   MovementResult currentMovementStatus = MovementResult::None;
 
@@ -133,6 +132,12 @@ void setup() {
 }
 
 void loop() {
+  monitorCommandButtons();
+  updateSevenSegmentDisplay();
+}
+
+// When a command button is pressed (i.e. Home/Play, or Pause/Unpause), then its respective command will be executed.
+void monitorCommandButtons() {
   // We always want to make sure the solenoid is not being powered when a command is not executing. There are some bugs that are mostly out of my control
   // that may cause the solenoid to become HIGH, for example, unplugging the USB from the Arduino can sometimes alter the state of the software.
   digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
@@ -158,23 +163,27 @@ void loop() {
   if(currentMovementStatus != MovementResult::Success && currentMovementStatus != MovementResult::None) {
     setErrorState(currentMovementStatus);
   }
+}
+
+void updateSevenSegmentDisplay() {
 
   // If the calibration button is being pressed, display the current value of the active potentiometer
-  if(currDisplayOption = mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue)) {
-    
-    // Must cast this to double because, for some reason, since every other value I've been sending to the display
-    // has been doubles, it only lets me write double values. Is it a bug on my end? I'm not sure, but this works.
-    speedDisplay.print((double)getActiveSensorCalibration());
-    speedDisplay.writeDisplay();
-    
-    if(lastSpeed == 0.0) lastSpeed = 0.000001; // Force turntable speed to refresh on next iteration
+  if(mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue)) {
+    currSevSegValue = getActiveSensorCalibration();
   }
 
   // Otherwise, display the turntable speed
   else {
-    calculateTurntableSpeedAndPrintToDisplay();
+    currSevSegValue = calculateTurntableSpeed(lastSevSegValue);
   }
-  lastDisplayOption = currDisplayOption;
+
+  // Only re-write the display if the last value is at least 0.009 different
+  if(abs(currSevSegValue - lastSevSegValue) > 0.009) {
+    sevSeg.print(currSevSegValue);
+    sevSeg.writeDisplay();
+  }
+
+  lastSevSegValue = currSevSegValue;
 }
 
 MovementResult playRoutine() {
@@ -292,7 +301,7 @@ unsigned int getActiveSensorCalibration() {
   else calibration = analogRead(CALIBRATION_POT_10IN);
 
   // I only have 10k pots, which ranges between 615-1023, and I only want to allow
-  // values between 0 and 50
+  // values between 0 and 50.
   calibration = (calibration - 615) * 50 / 408;
 
   if(calibration < 0) 
@@ -305,32 +314,19 @@ unsigned int getActiveSensorCalibration() {
 }
 
 // This function will calculate the speed of the turntable 8 times per rotation.
-void calculateTurntableSpeedAndPrintToDisplay() {
+double calculateTurntableSpeed(double lastValue) {
   currSpeedSensorStatus = mux.readDigitalValue(MultiplexerInput::TurntableSpeedSensor);
+  double currSpeed = lastValue;
   
   if(currSpeedSensorStatus != lastSpeedSensorStatus) {
     currMillis = millis();
     currSpeed = 60000 / (double)((currMillis - lastMillis) << 3); // Calculate RPM 8 times per rotation
-    
-    // Only re-write the display if the display will change
-    if(abs(lastSpeed - currSpeed) > 0.009) {
-      speedDisplay.print(currSpeed, 2);
-      speedDisplay.writeDisplay();
-    }
-
-    lastSpeed = currSpeed;
     lastMillis = currMillis;
   }
 
-  // If 1 second elapses without a sensor change, we can assume that the turntable has stopped.
-  // Also, re-write the display as 0 if the user releases the display button (changing from displaying calibration steps back to RPM)
-  else if((millis() - currMillis > 1000 && lastSpeed > 0.0)) {
-    speedDisplay.print(0.0);
-    speedDisplay.writeDisplay();
-    lastSpeed = 0.0;
-  }
-
   lastSpeedSensorStatus = currSpeedSensorStatus;
+
+  return currSpeed;
 }
 
 // This stops all movement and sets the turntable in an error state to prevent damage.
@@ -339,13 +335,13 @@ void setErrorState(MovementResult movementResult) {
   digitalWrite(PAUSE_STATUS_LED, HIGH);
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
-  speedDisplay.clear();
-  speedDisplay.writeDigitNum(3, movementResult, false);
-  speedDisplay.writeDisplay();
+  sevSeg.clear();
+  sevSeg.writeDigitNum(3, movementResult, false);
+  sevSeg.writeDisplay();
 
   // Wait for the user to press the Play/Home or Pause/Unpause buttons to break out of the error state
   while(!mux.readDigitalValue(MultiplexerInput::PlayHomeButton) && !mux.readDigitalValue(MultiplexerInput::PauseButton)) { delay(1); }
 
-  speedDisplay.clear();
-  speedDisplay.writeDisplay();
+  sevSeg.clear();
+  sevSeg.writeDisplay();
 }

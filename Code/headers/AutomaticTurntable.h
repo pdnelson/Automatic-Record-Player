@@ -6,6 +6,10 @@
 #ifndef AutoTurntable_h
 #define AutoTurntable_h
 
+    // Main loop functions
+    void monitorCommandButtons();
+    void updateSevenSegmentDisplay();
+
     // Routine commands
     MovementResult playRoutine();
     MovementResult homeRoutine();
@@ -16,7 +20,7 @@
     unsigned int getActiveSensorCalibration();
 
     // Turntable speed
-    void calculateTurntableSpeedAndPrintToDisplay();
+    double calculateTurntableSpeed(double lastValue);
 
     // Error handling
     void setErrorState(MovementResult errorCode);
