@@ -3,7 +3,6 @@
 #include "headers/AutomaticTurntable.h"
 #include "enums/MultiplexerInput.h"
 #include "enums/ErrorCode.h"
-#include "enums/TonearmMovementDirection.h"
 #include "enums/AutoManualSwitchPosition.h"
 #include "TonearmMovementController.h"
 
@@ -125,8 +124,7 @@ void setup() {
 
   // Otherwise, we only want to home the vertical axis if it is not already homed, which will drop the tonearm in its current location.
   else if(!mux.readDigitalValue(MultiplexerInput::VerticalLowerLimit)) {
-    if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM))
-      currentMovementStatus = ErrorCode::VerticalHomeError;
+      currentMovementStatus = pauseOrUnpause();
   }
 
   if(currentMovementStatus != ErrorCode::Success && currentMovementStatus != ErrorCode::None) {
@@ -134,13 +132,15 @@ void setup() {
   }
 }
 
-// This sits and waits for any of the command buttons to be pressed.
-// As soon as a button is pressed, the corresponding command routine is executed.
 void loop() {
+  // We always want to make sure the solenoid is not being powered when a command is not executing. There are some bugs that are mostly out of my control
+  // that may cause the solenoid to become HIGH, for example, unplugging the USB from the Arduino can sometimes alter the state of the software.
+  digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
+
   ErrorCode currentMovementStatus = ErrorCode::None;
 
   if(mux.readDigitalValue(MultiplexerInput::PauseButton)) {
-    currentMovementStatus = pauseAndWaitUntilUnpaused();
+    currentMovementStatus = pauseOrUnpause();
   }
   
   else if(mux.readDigitalValue(MultiplexerInput::PlayHomeButton) ||
@@ -177,6 +177,7 @@ void loop() {
 
 ErrorCode homeRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
+  digitalWrite(PAUSE_STATUS_LED, LOW);
 
   if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM))
     return ErrorCode::VerticalPickupError;
@@ -197,40 +198,40 @@ ErrorCode homeRoutine() {
 
 // This is the pause routine that will lift up the tonearm from the record until the user "unpauses" by pressing the
 // pause button again
-ErrorCode pauseAndWaitUntilUnpaused() {
+ErrorCode pauseOrUnpause() {
+  digitalWrite(MOVEMENT_STATUS_LED, LOW);
   digitalWrite(PAUSE_STATUS_LED, HIGH);
 
-  // Only "pause" if the tonearm is not already paused.
-  if(!mux.readDigitalValue(MultiplexerInput::VerticalUpperLimit)) {
+  // If the vertical lower limit is pressed (i.e., the tonearm is vertically homed), then move it up
+  if(mux.readDigitalValue(MultiplexerInput::VerticalLowerLimit)) {
     if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM))
       return ErrorCode::VerticalPickupError;
+  }
 
-    // Wait for the user to unpause.
-    while(!mux.readDigitalValue(MultiplexerInput::PauseButton)) {
-      delay(1);
+  // Otherwise, just move it down and then shut off the LED
+  else {
+    uint8_t tonearmSetRpm = 0;
+
+    // If the tonearm is hovering over home position, then just go down at default speed
+    if(mux.readDigitalValue(MultiplexerInput::HorizontalHomeOpticalSensor)) {
+      tonearmSetRpm = DEFAULT_MOVEMENT_RPM;
     }
+
+    // Otherwise, set it down carefully
+    else tonearmSetRpm = 3;
+
+    if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, tonearmSetRpm))
+      return ErrorCode::VerticalHomeError;
+
+    digitalWrite(PAUSE_STATUS_LED, LOW);
   }
-
-  uint8_t tonearmSetRpm = 0;
-
-  // If the tonearm is hovering over home position, then just go down at default speed
-  if(mux.readDigitalValue(MultiplexerInput::HorizontalHomeOpticalSensor)) {
-    tonearmSetRpm = DEFAULT_MOVEMENT_RPM;
-  }
-
-  // Otherwise, set it down carefully
-  else tonearmSetRpm = 3;
-
-  if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, tonearmSetRpm))
-    return ErrorCode::VerticalHomeError;
-
-  digitalWrite(PAUSE_STATUS_LED, LOW);
 
   return ErrorCode::Success;
 }
 
 ErrorCode playRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
+  digitalWrite(PAUSE_STATUS_LED, LOW);
 
   if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM))
     return ErrorCode::VerticalPickupError;

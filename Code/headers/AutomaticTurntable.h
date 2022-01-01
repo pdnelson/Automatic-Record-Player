@@ -8,7 +8,7 @@
 
     // Routine commands
     ErrorCode homeRoutine();
-    ErrorCode pauseAndWaitUntilUnpaused();
+    ErrorCode pauseOrUnpause();
     ErrorCode playRoutine();
 
     // Tonearm movement

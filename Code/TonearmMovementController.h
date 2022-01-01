@@ -50,6 +50,7 @@ class TonearmMovementController {
     private:        
         // Set all pins that the motor is using to LOW, as well as the motor demultiplexer.
         void releaseCurrentFromMotors();
+        
         // Multiplexer that we are reading all sensor values from
         Multiplexer inputMux;
 
