@@ -3,9 +3,9 @@
 #include "headers/AutomaticTurntable.h"
 #include "enums/MultiplexerInput.h"
 #include "enums/ErrorCode.h"
-#include "enums/MotorAxis.h"
 #include "enums/TonearmMovementDirection.h"
 #include "enums/AutoManualSwitchPosition.h"
+#include "TonearmMovementController.h"
 
 // Used for 7-segment display
 #include <Wire.h>
@@ -44,6 +44,19 @@ Stepper TonearmMotor = Stepper(STEPS_PER_REVOLUTION, MOTOR_PIN4, MOTOR_PIN2, MOT
 #define MUX_SELECTOR_D 5
 Multiplexer mux = Multiplexer(MUX_OUTPUT, MUX_SELECTOR_A, MUX_SELECTOR_B, MUX_SELECTOR_C, MUX_SELECTOR_D);
 
+TonearmMovementController tonearmController = TonearmMovementController(
+  mux,
+  MOTOR_PIN1,
+  MOTOR_PIN2,
+  MOTOR_PIN3,
+  MOTOR_PIN4,
+  TonearmMotor,
+  MOTOR_AXIS_SELECTOR,
+  HORIZONTAL_GEARING_SOLENOID,
+  MultiplexerInput::VerticalLowerLimit,
+  MultiplexerInput::VerticalUpperLimit
+);
+
 // The motors used in this project are 28BYJ-48 stepper motors, which I've found to cap at 11 RPM 
 // before becoming too unreliable. 8 or 9 I've found to be a good balance for speed and reliability at 5v DC.
 #define DEFAULT_MOVEMENT_RPM 8
@@ -76,8 +89,6 @@ bool currDisplayOption;
 void setup() {
   Serial.begin(SERIAL_SPEED);
 
-  pinMode(MOTOR_AXIS_SELECTOR, OUTPUT);
-  pinMode(HORIZONTAL_GEARING_SOLENOID, OUTPUT);
   pinMode(MOVEMENT_STATUS_LED, OUTPUT);
   pinMode(PAUSE_STATUS_LED, OUTPUT);
 
@@ -114,7 +125,7 @@ void setup() {
 
   // Otherwise, we only want to home the vertical axis if it is not already homed, which will drop the tonearm in its current location.
   else if(!mux.readDigitalValue(MultiplexerInput::VerticalLowerLimit)) {
-    if(!moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS))
+    if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM))
       currentMovementStatus = ErrorCode::VerticalHomeError;
   }
 
@@ -167,17 +178,17 @@ void loop() {
 ErrorCode homeRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
-  if(!moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS))
+  if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM))
     return ErrorCode::VerticalPickupError;
 
   // -200 calibration to push the tonearm past the home sensor, into the homing mount
-  if(!moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOpticalSensor, MOVEMENT_TIMEOUT_STEPS, -200, 7))
+  if(!tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOpticalSensor, MOVEMENT_TIMEOUT_STEPS, -200, 7))
     return ErrorCode::HorizontalHomeError;
 
-  if(!moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS))
+  if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM))
     return ErrorCode::VerticalHomeError;
 
-  horizontalRelativeMove(200);
+  tonearmController.horizontalRelativeMove(200, DEFAULT_MOVEMENT_RPM);
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
 
@@ -191,7 +202,7 @@ ErrorCode pauseAndWaitUntilUnpaused() {
 
   // Only "pause" if the tonearm is not already paused.
   if(!mux.readDigitalValue(MultiplexerInput::VerticalUpperLimit)) {
-    if(!moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS))
+    if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM))
       return ErrorCode::VerticalPickupError;
 
     // Wait for the user to unpause.
@@ -210,7 +221,7 @@ ErrorCode pauseAndWaitUntilUnpaused() {
   // Otherwise, set it down carefully
   else tonearmSetRpm = 3;
 
-  if(!moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, tonearmSetRpm))
+  if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, tonearmSetRpm))
     return ErrorCode::VerticalHomeError;
 
   digitalWrite(PAUSE_STATUS_LED, LOW);
@@ -221,128 +232,20 @@ ErrorCode pauseAndWaitUntilUnpaused() {
 ErrorCode playRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
 
-  if(!moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS))
+  if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM))
     return ErrorCode::VerticalPickupError;
 
-  if(!moveTonearmHorizontally(getActivePlaySensor(), MOVEMENT_TIMEOUT_STEPS, getActiveSensorCalibration(), 4))
+  if(!tonearmController.moveTonearmHorizontally(getActivePlaySensor(), MOVEMENT_TIMEOUT_STEPS, getActiveSensorCalibration(), 4))
     return ErrorCode::PlayError;
 
-  if(!moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, 4))
+  if(!tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, 4))
     return ErrorCode::VerticalHomeError;
 
-  horizontalRelativeMove(100, 8);
+  tonearmController.horizontalRelativeMove(100, DEFAULT_MOVEMENT_RPM);
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
   
   return ErrorCode::Success;
-}
-
-// Moves the tonearm to a specified destination.
-bool moveTonearmHorizontally(MultiplexerInput destinationSensor, unsigned int timeout, int calibration, uint8_t speed) {
-    // Only make the movement if it is a valid destination sensor
-    if(!(destinationSensor == MultiplexerInput::HorizontalHomeOpticalSensor || 
-        destinationSensor == MultiplexerInput::HorizontalPlay7InchOpticalSensor || 
-        destinationSensor == MultiplexerInput::HorizontalPlay10InchOpticalSensor || 
-        destinationSensor == MultiplexerInput::HorizontalPlay12InchOpticalSensor
-    )) {
-      Serial.println("Programming error: Invalid sensor sent to moveTonearmHorizontally. This function only expects a horizontal sensor.");
-      return false;
-    }
-
-    TonearmMotor.setSpeed(speed);
-    unsigned int movementStepCount = 0;
-    digitalWrite(MOTOR_AXIS_SELECTOR, MotorAxis::Horizontal);
-
-    bool currentSensorStatus = mux.readDigitalValue(destinationSensor); 
-    TonearmMovementDirection movementDirection = currentSensorStatus ? TonearmMovementDirection::Clockwise : TonearmMovementDirection::Counterclockwise;
-
-    digitalWrite(HORIZONTAL_GEARING_SOLENOID, HIGH);
-
-    // Keep moving until the sensor is the opposite of what it started at
-    while(mux.readDigitalValue(destinationSensor) == currentSensorStatus) {
-      TonearmMotor.step(movementDirection);
-
-      // If the sensor isn't hit in the expected time, the movement failed.
-      if(movementStepCount++ >= timeout) {
-        horizontalRelativeMove(200); // Move clockwise to unlock horizontal gears
-        digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
-        return false;
-      }
-    }
-
-    horizontalRelativeMove(calibration, speed); // Move tonearm additional steps to account for calibration set by rear potentiometers
-    delay(250); // Verify movement has truly ceased before releasing the solenoid
-    digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
-
-    releaseCurrentFromMotors();
-
-    return true;
-}
-
-bool moveTonearmVertically(MultiplexerInput destinationSensor, unsigned int timeout, uint8_t speed = DEFAULT_MOVEMENT_RPM) {
-
-  TonearmMovementDirection movementDirection = TonearmMovementDirection::NoDirection;
-
-  // Only perform the operation if the tonearm is not already at its destination.
-  if(!mux.readDigitalValue(destinationSensor)) {
-    if(destinationSensor == MultiplexerInput::VerticalLowerLimit) {
-      movementDirection = TonearmMovementDirection::Negative; // Must move in the negative direction (down) to reach the lower limit.
-    }
-    else if(destinationSensor == MultiplexerInput::VerticalUpperLimit) {
-      movementDirection = TonearmMovementDirection::Positive; // Must move in the positive direction (up) to reach the upper limit.
-    }
-    else {
-      Serial.println("Programming error: Invalid Multiplexer Input passed to moveTonearmVertically.");
-      return false;
-    }
-
-    TonearmMotor.setSpeed(speed);
-    unsigned int movementStepCount = 0;
-    digitalWrite(MOTOR_AXIS_SELECTOR, MotorAxis::Vertical);
-
-    // Move the vertical axis until it reaches its destination
-    while(!mux.readDigitalValue(destinationSensor)) {
-      TonearmMotor.step(movementDirection);
-
-      // Timeout so that if the motor gets stuck, it does not get damaged.
-      if(movementStepCount++ >= timeout) {
-        return false;
-      }
-    }
-
-    releaseCurrentFromMotors();
-  }
-
-  return true;
-}
-
-// This is used to release current from both motors so they aren't drawing power when not in use.
-void releaseCurrentFromMotors() {
-    digitalWrite(MOTOR_PIN1, LOW);
-    digitalWrite(MOTOR_PIN2, LOW);
-    digitalWrite(MOTOR_PIN3, LOW);
-    digitalWrite(MOTOR_PIN4, LOW);
-
-    digitalWrite(MOTOR_AXIS_SELECTOR, LOW);
-}
-
-// Move the tonearm horizontally by the given step count. A positive value will move the tonearm clockwise, and a negative value
-// counter-clockwise. This is a blind movement, meaning there is no check at the end that the tonearm successfully moved all
-// steps. This is only intended to be used for calibration offsets, and moving a few steps to unlock gears.
-void horizontalRelativeMove(int steps, uint8_t speed = DEFAULT_MOVEMENT_RPM) {
-  unsigned int movementStepCount = 0;
-
-  digitalWrite(MOTOR_AXIS_SELECTOR, MotorAxis::Horizontal);
-  TonearmMotor.setSpeed(speed);
-
-  TonearmMovementDirection movementDirection = (steps > 0) ? TonearmMovementDirection::Clockwise : TonearmMovementDirection::Counterclockwise;
-  steps = abs(steps);
-
-  while(movementStepCount++ < steps) {
-    TonearmMotor.step(movementDirection);
-  }
-
-  releaseCurrentFromMotors();
 }
 
 // This uses RecordSizeSelector1 and RecordSizeSelector2 to determine the record size the user
