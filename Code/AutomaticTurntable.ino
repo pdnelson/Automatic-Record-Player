@@ -314,6 +314,11 @@ double calculateTurntableSpeed(double lastValue) {
     currSpeed = 60000 / (double)((currMillis - lastMillis) << 3); // Calculate RPM 8 times per rotation
     lastMillis = currMillis;
   }
+  
+  // If 1 second elapses without a sensor change, we can assume that the turntable has stopped.
+  else if(millis() - currMillis > 1000 && lastValue > 0.0) {
+    currSpeed = 0.0;
+  }
 
   lastSpeedSensorStatus = currSpeedSensorStatus;
 
