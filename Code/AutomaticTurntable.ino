@@ -223,10 +223,12 @@ MovementResult homeRoutine() {
   result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOpticalSensor, MOVEMENT_TIMEOUT_STEPS, -200, 7);
   if(result != MovementResult::Success) return result;
 
+  tonearmController.horizontalRelativeMove(35, DEFAULT_MOVEMENT_RPM); // This is so the tonearm doesn't get "stuck" on the homing mount that it just rammed into
+
   result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
   if(result != MovementResult::Success) return result;
 
-  tonearmController.horizontalRelativeMove(200, DEFAULT_MOVEMENT_RPM);
+  tonearmController.horizontalRelativeMove(200, DEFAULT_MOVEMENT_RPM); // Disengage the gear from the tonearm so it doesn't get stuck
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
 
@@ -314,7 +316,7 @@ double calculateTurntableSpeed(double lastValue) {
     currSpeed = 60000 / (double)((currMillis - lastMillis) << 3); // Calculate RPM 8 times per rotation
     lastMillis = currMillis;
   }
-  
+
   // If 1 second elapses without a sensor change, we can assume that the turntable has stopped.
   else if(millis() - currMillis > 1000 && lastValue > 0.0) {
     currSpeed = 0.0;
