@@ -48,7 +48,7 @@ MovementResult TonearmMovementController::moveTonearmHorizontally(uint8_t destin
       }
     }
 
-    horizontalRelativeMove(calibration, speed); // Move tonearm additional steps to account for calibration set by rear potentiometers
+    this->horizontalRelativeMove(calibration, speed); // Move tonearm additional steps to account for calibration set by rear potentiometers
     delay(250); // Verify movement has truly ceased before releasing the solenoid
     digitalWrite(this->horizontalSolenoidPin, LOW);
 
@@ -80,6 +80,7 @@ MovementResult TonearmMovementController::moveTonearmVertically(uint8_t destinat
 
       // Timeout so that if the motor gets stuck, it does not get damaged.
       if(movementStepCount++ >= timeout) {
+        this->releaseCurrentFromMotors();
         if(movementDirection == TonearmMovementDirection::Positive)
           return MovementResult::VerticalPositiveDirectionError;
 
