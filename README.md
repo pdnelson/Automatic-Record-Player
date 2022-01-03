@@ -10,11 +10,10 @@ Some planned features of this turntable include:
   - Other buttons that contain other pre-defined routines (play and pause) that the user must initiate
 - Standard PC 3-prong female plug in the back to allow hookup to 120v or 230v households
 
-# Layout
 See a prototype video of this working [here](https://youtu.be/Y9oQI6XiWVw)
 
 # Inputs and routines
-The user has a total of four inputs they can use. Most of these functions must be initiated by the user by either pressing a button or flipping a switch, though homing can also be done automatically, which will be explained in more detail later on. Routine interrupt is currently not planned. This means that while one routine is running, none of the others can be executed for the duration of the currently-running routine.
+The user has a total of five inputs they can use. Most of these functions must be initiated by the user by either pressing a button or flipping a switch, though homing can also be done automatically, which will be explained in more detail later on. Routine interrupt is currently not planned. This means that while one routine is running, none of the others can be executed for the duration of the currently-running routine.
 
 ## Automatic/manual switch
 This is a 3-way switch with the center position being "off." Flipping the switch to the "up" position will set the turntable to automatic, while "down" will set it to manual. The turntable will automatically be homed upon flipping the switch to "automatic." Flipping it to "manual" will home the vertical axis, which will set the tonearm down in place where it currently is. The reason for this inclusion is to account for us not knowing what position the tonearm will be in when the device is turned on.
@@ -26,6 +25,12 @@ The "play/home" button will pick the tonearm up from any point, and either drop 
 
 ## Pause button
 The pause button will lift the tonearm up until the pause limit switch becomes "high." When the pause button is pressed again, the tonearm will be gently set down on the record.
+
+## Speed Selector
+Description to come. 
+
+## Display play calibration
+Description to come. 
 
 # Current pin usage
 - Digital
