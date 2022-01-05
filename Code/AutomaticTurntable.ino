@@ -311,14 +311,15 @@ double calculateTurntableSpeed(double lastValue) {
   currSpeedSensorStatus = mux.readDigitalValue(MultiplexerInput::TurntableSpeedSensor);
   double currSpeed = lastValue;
   
-  if(currSpeedSensorStatus != lastSpeedSensorStatus) {
+  // Only run the calculation ONCE per rotation, when the speed sensor goes from LOW to HIGH
+  if(currSpeedSensorStatus != lastSpeedSensorStatus && currSpeedSensorStatus) {
     currMillis = millis();
-    currSpeed = 60000 / (double)((currMillis - lastMillis) << 3); // Calculate RPM 8 times per rotation
+    currSpeed = 60000 / (double)(currMillis - lastMillis);
     lastMillis = currMillis;
   }
 
   // If 1 second elapses without a sensor change, we can assume that the turntable has stopped.
-  else if(millis() - currMillis > 1000 && lastValue > 0.0) {
+  else if(millis() - currMillis > 3000 && lastValue > 0.0) {
     currSpeed = 0.0;
   }
 
