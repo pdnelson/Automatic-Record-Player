@@ -177,8 +177,8 @@ void updateSevenSegmentDisplay() {
     currSevSegValue = calculateTurntableSpeed(lastSevSegValue);
   }
 
-  // Only re-write the display if the last value is at least 0.009 different
-  if(abs(currSevSegValue - lastSevSegValue) > 0.009) {
+  // Only re-write the display if the number will be different
+  if(currSevSegValue != lastSevSegValue) {
     sevSeg.print(currSevSegValue);
     sevSeg.writeDisplay();
   }
