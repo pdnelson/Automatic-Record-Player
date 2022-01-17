@@ -34,6 +34,8 @@ Description to come.
 
 # Current pin usage
 - Digital
+  - D0: Serial
+  - D1: Serial
   - D2: Input Multiplexer Selector A0
   - D3: Input Multiplexer Selector A1
   - D4: Input Multiplexer Selector A2
@@ -51,10 +53,10 @@ Description to come.
   - A0: 7" position potentiometer
   - A1: 10" position potentiometer
   - A2: 12" position potentiometer
-  - A3: UNUSED
+  - A3: 33-RPM potentiometer adjustment motor
   - A4/SDA: 7-Segment Display Data
   - A5/SCL: 7-Segment Display Clock
-  - A6: UNUSED
+  - A6: 45-RPM potentiometer adjustment motor
   - A7: Horizontal gearing solenoid
 
 - Input Multiplexer
@@ -72,8 +74,8 @@ Description to come.
   - S12: Auto/Manual mode switch
   - S13: Turntable speed sensor
   - S14: Display calibration value on 7-segment display
-  - S15: UNUSED
-  - S16: UNUSED
+  - S15: Auto/Manual speed switch
+  - S16: Target turntable speed selector
 
 - Motor Demultiplexer
   - OUT S1A: Vertical stepper motor pin 1
