@@ -74,8 +74,8 @@ Description to come.
   - S12: Auto/Manual mode switch
   - S13: Turntable speed sensor
   - S14: Display calibration value on 7-segment display
-  - S15: Target speed selector
-  - S16: UNUSED
+  - S15: Auto/Manual speed switch
+  - S16: Target turntable speed selector
 
 - Motor Demultiplexer
   - OUT S1A: Vertical stepper motor pin 1
