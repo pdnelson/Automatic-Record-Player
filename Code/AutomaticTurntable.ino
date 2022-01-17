@@ -73,7 +73,6 @@ Adafruit_7segment sevSeg = Adafruit_7segment();
 
 // These fields are so we aren't writing to the 7-segment display so often
 double lastSevSegValue = 0.0;
-double lastMillisSevSeg = millis();
 
 // All of these fields are used to calculate the speed that the turntable is spinning.
 #define SPEED_SENSOR 1
