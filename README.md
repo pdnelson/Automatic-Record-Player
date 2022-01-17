@@ -35,7 +35,7 @@ Description to come.
 # Current pin usage
 - Digital
   - D0: Serial
-  - D1: Serial
+  - D1: Speed sensor (interrupt)
   - D2: Input Multiplexer Selector A0
   - D3: Input Multiplexer Selector A1
   - D4: Input Multiplexer Selector A2
@@ -72,7 +72,7 @@ Description to come.
   - S10: Record Size Selector 2
   - S11: Horizontal "pickup" optical sensor
   - S12: Auto/Manual mode switch
-  - S13: Turntable speed sensor
+  - S13: UNUSED
   - S14: Display calibration value on 7-segment display
   - S15: Auto/Manual speed switch
   - S16: Target turntable speed selector

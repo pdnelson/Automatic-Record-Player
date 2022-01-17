@@ -60,10 +60,6 @@ enum MultiplexerInput : uint8_t {
     // S12
     AutoManualSwitch = 11,
 
-    // This is an optical sensor used to detect what speed the turntable is currently spinning at.
-    // S13
-    TurntableSpeedSensor = 12,
-
     // This is a button that the user can press that will display, numerically, the value of an analog potentiometer that corresponds with the current
     // record size that is selected.
     // S14

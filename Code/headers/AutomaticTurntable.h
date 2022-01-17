@@ -42,7 +42,7 @@
     /* Turntable speed */
 
     // This function will calculate the speed of the turntable 8 times per rotation.
-    double calculateTurntableSpeed(double lastValue);
+    void calculateTurntableSpeed();
 
 
     /* Error handling */

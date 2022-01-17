@@ -11,7 +11,7 @@
 #include <Adafruit_GFX.h>
 #include "Adafruit_LEDBackpack.h"
 
-#define SERIAL_SPEED 115200
+//#define SERIAL_SPEED 115200
 
 #define STEPS_PER_REVOLUTION 2048
 
@@ -73,13 +73,13 @@ Adafruit_7segment sevSeg = Adafruit_7segment();
 
 // These fields are so we aren't writing to the 7-segment display so often
 double lastSevSegValue = 0.0;
-double currSevSegValue = 0.0;
+double lastMillisSevSeg = millis();
 
 // All of these fields are used to calculate the speed that the turntable is spinning.
-unsigned long currMillis = millis();
-unsigned long lastMillis = millis();
-bool currSpeedSensorStatus;
-bool lastSpeedSensorStatus;
+#define SPEED_SENSOR 1
+volatile unsigned long currMillisSpeed = millis();
+volatile unsigned long lastMillisSpeed = currMillisSpeed;
+volatile double currSpeed;
 
 // Calibration potentiometers are used to move the tonearm a few steps past the sensor, so that the user has an easy way
 // to fine-tune where exactly it should be set down (or picked up)
@@ -88,10 +88,13 @@ bool lastSpeedSensorStatus;
 #define CALIBRATION_POT_12IN A2
 
 void setup() {
-  Serial.begin(SERIAL_SPEED);
+  //Serial.begin(SERIAL_SPEED);
 
   pinMode(MOVEMENT_STATUS_LED, OUTPUT);
   pinMode(PAUSE_STATUS_LED, OUTPUT);
+
+  pinMode(SPEED_SENSOR, INPUT);
+  attachInterrupt(digitalPinToInterrupt(SPEED_SENSOR), calculateTurntableSpeed, RISING);
 
   mux.setDelayMicroseconds(10);
 
@@ -109,9 +112,6 @@ void setup() {
   delay(100);
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
   // End startup light show
-
-  lastSpeedSensorStatus = mux.readDigitalValue(MultiplexerInput::TurntableSpeedSensor);
-  currSpeedSensorStatus = lastSpeedSensorStatus;
 
   MovementResult currentMovementStatus = MovementResult::None;
 
@@ -167,6 +167,8 @@ void monitorCommandButtons() {
 
 void updateSevenSegmentDisplay() {
 
+  double currSevSegValue = 0.0;
+
   // If the calibration button is being pressed, display the current value of the active potentiometer
   if(mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue)) {
     currSevSegValue = getActiveSensorCalibration();
@@ -174,7 +176,12 @@ void updateSevenSegmentDisplay() {
 
   // Otherwise, display the turntable speed
   else {
-    currSevSegValue = calculateTurntableSpeed(lastSevSegValue);
+
+    // If 3 seconds elapse without a speed sensor interrupt, we can assume that the turntable has stopped.
+    if(millis() - currMillisSpeed > 3000 && currSpeed > 0.0) {
+      currSevSegValue = 0.0;
+    }
+    else currSevSegValue = currSpeed;
   }
 
   // Only re-write the display if the number will be different
@@ -307,25 +314,11 @@ unsigned int getActiveSensorCalibration() {
   return calibration;
 }
 
-double calculateTurntableSpeed(double lastValue) {
-  currSpeedSensorStatus = mux.readDigitalValue(MultiplexerInput::TurntableSpeedSensor);
-  double currSpeed = lastValue;
-  
-  // Only run the calculation ONCE per rotation, when the speed sensor goes from LOW to HIGH
-  if(currSpeedSensorStatus != lastSpeedSensorStatus && currSpeedSensorStatus) {
-    currMillis = millis();
-    currSpeed = 60000 / (double)(currMillis - lastMillis);
-    lastMillis = currMillis;
-  }
-
-  // If 1 second elapses without a sensor change, we can assume that the turntable has stopped.
-  else if(millis() - currMillis > 3000 && lastValue > 0.0) {
-    currSpeed = 0.0;
-  }
-
-  lastSpeedSensorStatus = currSpeedSensorStatus;
-
-  return currSpeed;
+// This function is attached to an interrupt, and therefore, is not called in the main loop
+void calculateTurntableSpeed() {
+  currMillisSpeed = millis();
+  currSpeed = 60000 / (double)(currMillisSpeed - lastMillisSpeed);
+  lastMillisSpeed = currMillisSpeed;
 }
 
 void setErrorState(MovementResult movementResult) {
