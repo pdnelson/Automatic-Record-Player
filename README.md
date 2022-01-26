@@ -34,8 +34,8 @@ Description to come.
 
 # Current pin usage
 - Digital
-  - D0: Speed sensor (interrupt)
-  - D1: UNUSED
+  - D0: UNUSED
+  - D1: Speed sensor (interrupt)
   - D2: Input Multiplexer Selector A0
   - D3: Input Multiplexer Selector A1
   - D4: Input Multiplexer Selector A2
