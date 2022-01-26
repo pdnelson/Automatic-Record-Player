@@ -34,8 +34,8 @@ Description to come.
 
 # Current pin usage
 - Digital
-  - D0: Serial
-  - D1: Speed sensor (interrupt)
+  - D0: Speed sensor (interrupt)
+  - D1: UNUSED
   - D2: Input Multiplexer Selector A0
   - D3: Input Multiplexer Selector A1
   - D4: Input Multiplexer Selector A2
@@ -53,10 +53,10 @@ Description to come.
   - A0: 7" position potentiometer
   - A1: 10" position potentiometer
   - A2: 12" position potentiometer
-  - A3: 33-RPM potentiometer adjustment motor
+  - A3: Speed potentiometer adjustment motor
   - A4/SDA: 7-Segment Display Data
   - A5/SCL: 7-Segment Display Clock
-  - A6: 45-RPM potentiometer adjustment motor
+  - A6: UNUSED
   - A7: Horizontal gearing solenoid
 
 - Input Multiplexer
