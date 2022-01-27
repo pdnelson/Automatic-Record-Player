@@ -130,6 +130,6 @@ Description to come.
 - Thermal paste
 - Turntable belt (19cm folded length)
 - RCA breakout connectors
-- Any turntable cartridge that fits a standard headshell
+- Any turntable cartridge that fits a standard headshell (I used an Audio-Technica AT-VM95C)
 - Turntable cartridge cable leads
 - Tinted plexiglass (2370)
