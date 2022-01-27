@@ -10,8 +10,6 @@ Some planned features of this turntable include:
   - Other buttons that contain other pre-defined routines (play and pause) that the user must initiate
 - Standard PC 3-prong female plug in the back to allow hookup to 120v or 230v households
 
-See a prototype video of this working [here](https://youtu.be/Y9oQI6XiWVw)
-
 # Inputs and routines
 The user has a total of five inputs they can use. Most of these functions must be initiated by the user by either pressing a button or flipping a switch, though homing can also be done automatically, which will be explained in more detail later on. Routine interrupt is currently not planned. This means that while one routine is running, none of the others can be executed for the duration of the currently-running routine.
 
