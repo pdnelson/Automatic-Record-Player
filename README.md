@@ -10,7 +10,14 @@ Some planned features of this turntable include:
   - Other buttons that contain other pre-defined routines (play and pause) that the user must initiate
 - Standard PC 3-prong female plug in the back to allow hookup to 120v or 230v households
 
-See a prototype video of this working [here](https://youtu.be/Y9oQI6XiWVw)
+# Pictures
+
+![Prototype Unit](https://user-images.githubusercontent.com/48131480/151425938-aa4da370-a754-4125-8e15-a789f2c7fb67.png)
+
+![Populated PCB (well, as much of it as you can see)](https://cdn.discordapp.com/attachments/625801308854812684/936333541015425064/20220127_133457.jpg)
+
+![Empty PCB](https://media.discordapp.net/attachments/625801308854812684/936333517493796904/20220127_133614.jpg?width=1214&height=683)
+
 
 # Inputs and routines
 The user has a total of five inputs they can use. Most of these functions must be initiated by the user by either pressing a button or flipping a switch, though homing can also be done automatically, which will be explained in more detail later on. Routine interrupt is currently not planned. This means that while one routine is running, none of the others can be executed for the duration of the currently-running routine.
@@ -34,7 +41,7 @@ Description to come.
 
 # Current pin usage
 - Digital
-  - D0: Serial
+  - D0: UNUSED
   - D1: Speed sensor (interrupt)
   - D2: Input Multiplexer Selector A0
   - D3: Input Multiplexer Selector A1
@@ -53,10 +60,10 @@ Description to come.
   - A0: 7" position potentiometer
   - A1: 10" position potentiometer
   - A2: 12" position potentiometer
-  - A3: 33-RPM potentiometer adjustment motor
+  - A3: Speed potentiometer adjustment motor
   - A4/SDA: 7-Segment Display Data
   - A5/SCL: 7-Segment Display Clock
-  - A6: 45-RPM potentiometer adjustment motor
+  - A6: UNUSED
   - A7: Horizontal gearing solenoid
 
 - Input Multiplexer
@@ -132,6 +139,6 @@ Description to come.
 - Thermal paste
 - Turntable belt (19cm folded length)
 - RCA breakout connectors
-- Any turntable cartridge that fits a standard headshell
+- Any turntable cartridge that fits a standard headshell (I used an Audio-Technica AT-VM95C)
 - Turntable cartridge cable leads
 - Tinted plexiglass (2370)
