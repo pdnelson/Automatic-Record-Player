@@ -97,7 +97,7 @@ Description to come.
 # Parts list (so far)
 ## Electrical parts (see BOM in Design/electrical for PCB parts list)
 - Arduino Nano Every
-- Mean well RS-15-5 5V 3A power supply
+- Mean well LRS-150-12 12.5a power supply
 - 22 AWG Wire
 - 1x ADA2776 5v solenoid
 - 2x 28BYJ-48 stepper motors
