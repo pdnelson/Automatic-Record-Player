@@ -54,16 +54,16 @@ enum MultiplexerInput : uint8_t {
     // S11
     HorizontalPickupOpticalSensor = 10,
 
-    // This is the switch used to determine whether the user turned on the turntable in automatic or manual mode.
-    // Automatic: The tonearm will return to "home" at the end of a record.
-    // Manual: The tonearm will not return to "home" at the end of a record. All buttons still have their same functionality in "automatic" mode.
-    // S12
-    AutoManualSwitch = 11,
-
     // This is a button that the user can press that will display, numerically, the value of an analog potentiometer that corresponds with the current
     // record size that is selected.
     // S14
-    DisplayCalibrationValue = 13
+    DisplayCalibrationValue = 13,
+    
+    // This is the switch used to determine whether the user turned on the turntable in automatic or manual mode.
+    // Automatic: The tonearm will return to "home" at the end of a record.
+    // Manual: The tonearm will not return to "home" at the end of a record. All buttons still have their same functionality in "automatic" mode.
+    // S16
+    AutoManualSwitch = 15
 };
 
 #endif
