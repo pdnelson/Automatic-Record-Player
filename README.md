@@ -10,14 +10,7 @@ Some planned features of this turntable include:
   - Other buttons that contain other pre-defined routines (play and pause) that the user must initiate
 - Standard PC 3-prong female plug in the back to allow hookup to 120v or 230v households
 
-# Pictures
-
-![Prototype Unit](https://user-images.githubusercontent.com/48131480/151425938-aa4da370-a754-4125-8e15-a789f2c7fb67.png)
-
-![Populated PCB (well, as much of it as you can see)](https://cdn.discordapp.com/attachments/625801308854812684/936333541015425064/20220127_133457.jpg)
-
-![Empty PCB](https://media.discordapp.net/attachments/625801308854812684/936333517493796904/20220127_133614.jpg?width=1214&height=683)
-
+See a prototype video of this working [here](https://youtu.be/Y9oQI6XiWVw)
 
 # Inputs and routines
 The user has a total of five inputs they can use. Most of these functions must be initiated by the user by either pressing a button or flipping a switch, though homing can also be done automatically, which will be explained in more detail later on. Routine interrupt is currently not planned. This means that while one routine is running, none of the others can be executed for the duration of the currently-running routine.
@@ -41,7 +34,7 @@ Description to come.
 
 # Current pin usage
 - Digital
-  - D0: UNUSED
+  - D0: Serial
   - D1: Speed sensor (interrupt)
   - D2: Input Multiplexer Selector A0
   - D3: Input Multiplexer Selector A1
@@ -60,10 +53,10 @@ Description to come.
   - A0: 7" position potentiometer
   - A1: 10" position potentiometer
   - A2: 12" position potentiometer
-  - A3: UNUSED
+  - A3: 33-RPM potentiometer adjustment motor
   - A4/SDA: 7-Segment Display Data
   - A5/SCL: 7-Segment Display Clock
-  - A6: UNUSED
+  - A6: 45-RPM potentiometer adjustment motor
   - A7: Horizontal gearing solenoid
 
 - Input Multiplexer
@@ -81,8 +74,8 @@ Description to come.
   - S12: Auto/Manual mode switch
   - S13: UNUSED
   - S14: Display calibration value on 7-segment display
-  - S15: UNUSED
-  - S16: UNUSED
+  - S15: Auto/Manual speed switch
+  - S16: Target turntable speed selector
 
 - Motor Demultiplexer
   - OUT S1A: Vertical stepper motor pin 1
@@ -93,52 +86,3 @@ Description to come.
   - OUT S3B: Horizontal stepper motor pin 3
   - OUT S4A: Vertical stepper motor pin 4
   - OUR S4B: Horizontal stepper motor pin 4
-
-# Parts list (so far)
-## Electrical parts (see BOM in Design/electrical for PCB parts list)
-- Arduino Nano Every
-- Mean well LRS-150-12 12.5a power supply
-- 22 AWG Wire
-- 1x ADA2776 5v solenoid
-- 2x 28BYJ-48 stepper motors
-- 2x ULN2003 stepper motor drivers
-- slotted optical sensors (7x for full turntable, 5x for only 7")
-- 2x micro limit switches
-- breadboards (as many as you need)
-- 2x LED lights (any color; these are to indicate movement and pause)
-- 26 AWG stranded wire
-- 3x blue cherry mx Mechanical Keyswitch
-- 1x HYEJET-01 motor (uses M2 screws)
-- 2x 1N4007 diodes
-- 2x TIP120 transistors
-- 1x MUX36S16DA SOIC 16-channel digital multiplexer
-- 1x ADG333AB quad 2-channel analog demultiplexer
-- [1x 0.056" 7-segment display w/ "backpack"](https://www.adafruit.com/product/879)
-- 10k panel-mount linear potentiometer (3x for regular size turntable, 1x for only 7") ([P160KN2-0QA25B10K](https://www.digikey.com/en/products/detail/tt-electronics-bi/P160KN2-0QA25B10K/5957459))
-
-## Mechanical parts
-- 1x 9/32" diameter steel rod, between 4 and 5" long
-- 1x 3/16" diameter steel rod, 5" long
-- 1x 3/16" steel rods, 4" long
-- 1x 1.8"x1.8" key stock, ~3" long
-- many screws; 4-40 threading, 0.183" diameter head, 1/4" long
-- a few more screws; 4-40 threading, 0.183" diameter head, 3/8" long
-- many square nuts; 4-40 threading, 1/4" diameter, 3/32" thick
-- washers; 18-8 Stainless Steel Washer for Number 10 Screw Size, 0.203" ID, 0.438" OD
-- yet more screws; 2-56 threading, 1/2" long
-- 5x5mm square nuts; 2-56 threading
-- washers for no. 2 screw size, 0.094" inner diameter
-- 3x 608RS ball bearings
-- For turntable motor
-  - 6x M2.5 screws; 8mm thread length
-  - 6x felt cushioning washers (0.138" ID, 0.250" OD, 0.188" thickness (can be trimmed))
-  - 12x felt cushioning washers (0.250" ID, 0.500" OD (can be trimmed), 0.25" (can be trimmed))
-
-## Miscellaneous parts
-- 10x10mm heat sinks
-- Thermal paste
-- Turntable belt (19cm folded length)
-- RCA breakout connectors
-- Any turntable cartridge that fits a standard headshell (I used an Audio-Technica AT-VM95C)
-- Turntable cartridge cable leads
-- Tinted plexiglass (2370)
