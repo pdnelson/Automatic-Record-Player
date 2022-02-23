@@ -41,11 +41,11 @@ Description to come.
   - D4: Input Multiplexer Selector A2
   - D5: Input Multiplexer Selector A3
   - D6: Input Multiplexer Output
-  - D7: Motor Demultiplexer D1
-  - D8: Motor Demultiplexer D2
-  - D9: Motor Demultiplexer D3
-  - D10: Motor Demultiplexer D4
-  - D11: Motor Demultiplexer select (IN1, IN2, IN3 and IN4)
+  - D7: Motor Demultiplexer U13 pin A
+  - D8: Motor Demultiplexer U12 pin A
+  - D9: Motor Demultiplexer U11 pin A
+  - D10: Motor Demultiplexer U10 pin A
+  - D11: Motor Demultiplexers select (U10, U11, U12 and U14, pin S)
   - D12: Movement status LED
   - D13: Pause status LED
 
@@ -77,12 +77,18 @@ Description to come.
   - S15: Auto/Manual speed switch
   - S16: Target turntable speed selector
 
-- Motor Demultiplexer
-  - OUT S1A: Vertical stepper motor pin 1
-  - OUT S1B: Horizontal stepper motor pin 1
-  - OUT S2A: Vertical stepper motor pin 2
-  - OUT S2B: Horizontal stepper motor pin 2
-  - OUT S3A: Vertical stepper motor pin 3
-  - OUT S3B: Horizontal stepper motor pin 3
-  - OUT S4A: Vertical stepper motor pin 4
-  - OUR S4B: Horizontal stepper motor pin 4
+- Motor Demultiplexer U10
+  - Y0: Vertical stepper motor pin 1
+  - Y1: Horizontal stepper motor pin 1
+
+- Motor Demultiplexer U11
+  - Y0: Vertical stepper motor pin 2
+  - Y1: Horizontal stepper motor pin 2
+
+- Motor Demultiplexer U12
+  - Y0: Vertical stepper motor pin 3
+  - Y1: Horizontal stepper motor pin 3
+
+- Motor Demultiplexer U13
+  - Y0: Vertical stepper motor pin 4
+  - Y1: Horizontal stepper motor pin 4

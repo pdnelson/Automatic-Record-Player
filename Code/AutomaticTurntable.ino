@@ -17,10 +17,10 @@
 
 // These motor pins channel into a quad 2-channel demultiplexer, so that either the vertical or horizontal motors receive
 // the voltages. Only one of these motors will ever be moving at once
-#define MOTOR_PIN1 7
-#define MOTOR_PIN2 8
-#define MOTOR_PIN3 9
-#define MOTOR_PIN4 10
+#define MOTOR_PIN1 10
+#define MOTOR_PIN2 9
+#define MOTOR_PIN3 8
+#define MOTOR_PIN4 7
 Stepper TonearmMotor = Stepper(STEPS_PER_REVOLUTION, MOTOR_PIN4, MOTOR_PIN2, MOTOR_PIN3, MOTOR_PIN1);
 
 // This is the pin used to select which motor we are moving, using the demultiplexer.
