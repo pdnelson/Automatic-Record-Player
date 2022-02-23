@@ -71,11 +71,11 @@ Description to come.
   - S9: Record Size Selector 1
   - S10: Record Size Selector 2
   - S11: Horizontal "pickup" optical sensor
-  - S12: Auto/Manual mode switch
+  - S12: UNUSED
   - S13: UNUSED
   - S14: Display calibration value on 7-segment display
-  - S15: Auto/Manual speed switch
-  - S16: Target turntable speed selector
+  - S15: UNUSED
+  - S16: Auto/Manual mode switch
 
 - Motor Demultiplexer U10
   - Y0: Vertical stepper motor pin 1
