@@ -33,6 +33,7 @@
 
 # vscode folders
 arduino.json
+c_cpp_properties.json
 
 # sketchup backup files
 *.skb
