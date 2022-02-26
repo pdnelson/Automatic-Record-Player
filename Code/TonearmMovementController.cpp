@@ -64,10 +64,10 @@ MovementResult TonearmMovementController::moveTonearmVertically(uint8_t destinat
   // Only perform the operation if the tonearm is not already at its destination.
   if(!this->inputMux.readDigitalValue(destinationSensor)) {
     if(destinationSensor == this->verticalLowerLimit) {
-      movementDirection = TonearmMovementDirection::Negative; // Must move in the negative direction (down) to reach the lower limit.
+      movementDirection = TonearmMovementDirection::Down; // Must move down to reach the lower limit.
     }
     else if(destinationSensor == this->verticalUpperLimit) {
-      movementDirection = TonearmMovementDirection::Positive; // Must move in the positive direction (up) to reach the upper limit.
+      movementDirection = TonearmMovementDirection::Up; // Must move up to reach the upper limit.
     }
 
     this->tonearmMotors.setSpeed(speed);
@@ -81,7 +81,7 @@ MovementResult TonearmMovementController::moveTonearmVertically(uint8_t destinat
       // Timeout so that if the motor gets stuck, it does not get damaged.
       if(movementStepCount++ >= timeout) {
         this->releaseCurrentFromMotors();
-        if(movementDirection == TonearmMovementDirection::Positive)
+        if(movementDirection == TonearmMovementDirection::Up)
           return MovementResult::VerticalPositiveDirectionError;
 
         else
