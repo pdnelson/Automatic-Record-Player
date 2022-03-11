@@ -1,7 +1,8 @@
 # Automatic Turntable Introduction
 This is a semi-automatic turntable that plays 7", 10" or 12" records! The automatic capabilities will be powered by an Arduino Nano Every, 2 stepper motors, and a bunch of sensors.
-Some features of this turntable include:
+Some notes on this turntable include (see "Features, User Inputs and Routines" section for more details):
 - Stereo RCA outputs for a receiver
+  - Includes Ground line
 - Able to fit any commercial cartridge
 - 45 and 33-RPM speeds
   - Speed monitored on 7-segment display
@@ -9,8 +10,14 @@ Some features of this turntable include:
   - Returns tonearm to "home" position automatically after a record is finished
   - Other buttons that contain other pre-defined routines (play and pause) that the user must initiate
 - Standard PC 3-prong female plug in the back to allow hookup to 120v or 230v households
+- Counterbalance weight to fine-tune tonearm weight
+- Skate/Anti-skate weight to fine-tune horizontal drift
 
-See a prototype video of this working [here](https://youtu.be/Y9oQI6XiWVw)
+# Demo Videos
+
+A prototype can be seen [here](https://www.youtube.com/watch?v=AN1vcnQAMdQ). Please note that this prototype is outdated, and is NOT a comprehensive/full representation of all the features. All features present on this page are present on that prototype, with the exception of skate/anti-skate adjustment.
+
+A direct audio capture demo can be seen [here](https://youtu.be/0yNxp464KpQ). Please note that "humming" heard in the background is from the stereo receiver I recorded from, and not the record player. Pitch imperfections are also present in this recording for the following reasons: The grooves of this record were pressed slightly off-center, and the pulleys driving the turntable are 3D-printed, so there is a lot of wow/flutter.
 
 # Features, User Inputs and Routines
 The turntable has several inputs the user can use. Most of these functions must be initiated by the user by either pressing a button or flipping a switch, though homing can also be done automatically, which will be explained in more detail later on. Routine interrupt is currently not planned. This means that while one routine is running, none of the others can be executed for the duration of the currently-running routine.
@@ -31,7 +38,7 @@ When the pause button is pressed again, if the tonearm is directly above "home" 
 ## Speed Selector
 The speed selector switch is a 3-position switch with the center position turning the turntable motor off, the lower position spinning it at 33-RPM, and the upper position spinning it at 45-RPM.
 
-#Fine-Tune Speed Adjustment
+## Fine-Tune Speed Adjustment
 On the right side of the record player, there are two potentiometers: One for adjusting the 33-RPM speed setting, and the other for adjusting the 45-RPM speed setting. This allows the user to perfectly dial in the speed they are looking to play at.
 
 If desired, the 33-RPM speed setting can also be used to play at 16-RPM by adjusting the 33-RPM potentiometer.
