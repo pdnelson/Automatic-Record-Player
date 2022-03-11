@@ -114,14 +114,8 @@ void setup() {
 
   MovementResult currentMovementStatus = MovementResult::None;
 
-  // If the turntable is turned on to "automatic," then home the whole tonearm if it is not already home.
-  if(mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) == AutoManualSwitchPosition::Automatic && 
-    !mux.readDigitalValue(MultiplexerInput::HorizontalHomeOpticalSensor)) {
-    MovementResult currentMovementStatus = homeRoutine();
-  }
-
-  // Otherwise, we only want to home the vertical axis if it is not already homed, which will drop the tonearm in its current location.
-  else if(!mux.readDigitalValue(MultiplexerInput::VerticalLowerLimit)) {
+  // Vertically home the tonearm if it is not already homed.
+  if(!mux.readDigitalValue(MultiplexerInput::VerticalLowerLimit)) {
       currentMovementStatus = pauseOrUnpause();
   }
 
