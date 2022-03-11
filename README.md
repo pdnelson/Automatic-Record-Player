@@ -60,7 +60,7 @@ The selected potentiometer is determined by the Active Play Sensor Selector.
 
 # Current pin usage
 - Digital
-  - D0: Serial
+  - D0: UNUSED
   - D1: Speed sensor (interrupt)
   - D2: Input Multiplexer Selector A0
   - D3: Input Multiplexer Selector A1
