@@ -192,6 +192,9 @@ void updateSevenSegmentDisplay() {
   lastSevSegValue = currSevSegValue;
 }
 
+// Move the tonearm clockwise to the active play sensor, designated by getActivePlaySensor()
+// This is a multi-movement routine, meaning that multiple tonearm movements are executed. If one of those movements fails, the
+// whole routine is aborted.
 MovementResult playRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
   digitalWrite(PAUSE_STATUS_LED, LOW);
@@ -216,6 +219,9 @@ MovementResult playRoutine() {
   return result;
 }
 
+// Move the tonearm counterclockwise to the home sensor.
+// This is a multi-movement routine, meaning that multiple tonearm movements are executed. If one of those movements fails, the
+// whole routine is aborted.
 MovementResult homeRoutine() {
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
   digitalWrite(PAUSE_STATUS_LED, LOW);
@@ -241,6 +247,8 @@ MovementResult homeRoutine() {
   return result;
 }
 
+// This is the pause routine that will lift up the tonearm from the record until the user "unpauses" by pressing the
+// pause button again
 MovementResult pauseOrUnpause() {
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
   digitalWrite(PAUSE_STATUS_LED, HIGH);
@@ -272,6 +280,8 @@ MovementResult pauseOrUnpause() {
   return result;
 }
 
+// This uses RecordSizeSelector1 and RecordSizeSelector2 to determine the record size the user
+// currently has selected.
 MultiplexerInput getActivePlaySensor() {
 
   // If only RecordSizeSelector1 is HIGH, we are using the 7" sensor
@@ -286,6 +296,8 @@ MultiplexerInput getActivePlaySensor() {
   return MultiplexerInput::HorizontalPlay10InchOpticalSensor;
 }
 
+// Returns the calibration step offset for the given sensor.
+// The returned value will be the number of steps (clockwise or counterclockwise) that the horizontal motor should move.
 unsigned int getActiveSensorCalibration() {
   int calibration = 0;
 
@@ -313,13 +325,19 @@ unsigned int getActiveSensorCalibration() {
   return calibration;
 }
 
-// This function is attached to an interrupt, and therefore, is not called in the main loop
+// Each time the interrupt calls this function, the current milliseconds are polled, and compared against the last polling
+// to calculate the speed the turntable is spinning on each rotation. This calculation is always occurring, even if the speed
+// is not being displayed.
+// This is attached to an interrupt because it is a time-sensitive operation, and having to wait for other code to finish executing
+// would cause this to return inaccurate values.
 void calculateTurntableSpeed() {
   currMillisSpeed = millis();
   currSpeed = 60000 / (double)(currMillisSpeed - lastMillisSpeed);
   lastMillisSpeed = currMillisSpeed;
 }
 
+// This stops all movement and sets the turntable in an error state to prevent damage.
+// This will be called if a motor stall has been detected.
 void setErrorState(MovementResult movementResult) {
   digitalWrite(PAUSE_STATUS_LED, HIGH);
   digitalWrite(MOVEMENT_STATUS_LED, HIGH);
