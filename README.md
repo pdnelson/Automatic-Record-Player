@@ -23,7 +23,7 @@ A direct audio capture demo can be seen [here](https://youtu.be/0yNxp464KpQ). Pl
 The turntable has several inputs the user can use. Most of these functions must be initiated by the user by either pressing a button or flipping a switch, though homing can also be done automatically, which will be explained in more detail later on. Routine interrupt is currently not planned. This means that while one routine is running, none of the others can be executed for the duration of the currently-running routine.
 
 ## Automatic/manual switch
-This is a 3-position switch with the center position being "off." Flipping the switch to the "up" position will set the turntable to automatic, while "down" will set it to manual. The turntable will automatically be vertically homed upon flipping the switch to either direction, meaning that it will set the tonearm down in place where it currently is. The reason for this inclusion is to account for us not knowing what position the tonearm will be in when the device is turned on.
+This is a 3-position switch with the center position being "off." Flipping the switch to the "up" position will set the turntable to automatic, while "down" will set it to manual. The turntable will automatically be homed upon flipping the switch to "automatic." Flipping it to "manual" will home the vertical axis, which will set the tonearm down in place where it currently is. The reason for this inclusion is to account for us not knowing what position the tonearm will be in when the device is turned on.
 
 As soon as this switch is flipped to "manual" or "automatic," the software setup procedure begins.
 
