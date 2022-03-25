@@ -200,10 +200,10 @@ MovementResult playRoutine() {
   result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
   if(result != MovementResult::Success) return result;
 
-  result = tonearmController.moveTonearmHorizontally(getActivePlaySensor(), MOVEMENT_TIMEOUT_STEPS, calibration, 4);
+  result = tonearmController.moveTonearmHorizontally(getActivePlaySensor(), MOVEMENT_TIMEOUT_STEPS, calibration, 3);
   if(result != MovementResult::Success) return result;
 
-  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, 4);
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, 3);
   if(result != MovementResult::Success) return result;
 
   tonearmController.horizontalRelativeMove(100, DEFAULT_MOVEMENT_RPM);
