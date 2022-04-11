@@ -63,7 +63,8 @@ TonearmMovementController tonearmController = TonearmMovementController(
 // These are timeouts used for error checking, so the hardware doesn't damage itself.
 // Essentially, if the steps exceed this number and the motor has not yet reached its
 // destination, an error has occurred.
-#define MOVEMENT_TIMEOUT_STEPS 1000
+#define VERTICAL_MOVEMENT_TIMEOUT_STEPS 1000
+#define HORIZONTAL_MOVEMENT_TIMEOUT_STEPS 6000
 
 // The 7-segment display is used for the following:
 // - Displaying the speed that the turntable is spinning.
@@ -203,13 +204,13 @@ MovementResult playRoutine() {
 
   int calibration = getActiveSensorCalibration();
 
-  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
   if(result != MovementResult::Success) return result;
 
-  result = tonearmController.moveTonearmHorizontally(getActivePlaySensor(), MOVEMENT_TIMEOUT_STEPS, calibration, 3);
+  result = tonearmController.moveTonearmHorizontally(getActivePlaySensor(), HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, calibration, DEFAULT_MOVEMENT_RPM + 1);
   if(result != MovementResult::Success) return result;
 
-  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, 3);
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, 3);
   if(result != MovementResult::Success) return result;
 
   tonearmController.horizontalRelativeMove(100, DEFAULT_MOVEMENT_RPM);
@@ -228,16 +229,16 @@ MovementResult homeRoutine() {
 
   MovementResult result = MovementResult::None;
 
-  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
   if(result != MovementResult::Success) return result;
 
   // -200 calibration to push the tonearm past the home sensor, into the homing mount
-  result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOpticalSensor, MOVEMENT_TIMEOUT_STEPS, -200, 7);
+  result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, -200, DEFAULT_MOVEMENT_RPM + 1);
   if(result != MovementResult::Success) return result;
 
   tonearmController.horizontalRelativeMove(35, DEFAULT_MOVEMENT_RPM); // This is so the tonearm doesn't get "stuck" on the homing mount that it just rammed into
 
-  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
   if(result != MovementResult::Success) return result;
 
   tonearmController.horizontalRelativeMove(200, DEFAULT_MOVEMENT_RPM); // Disengage the gear from the tonearm so it doesn't get stuck
@@ -257,7 +258,7 @@ MovementResult pauseOrUnpause() {
 
   // If the vertical lower limit is pressed (i.e., the tonearm is vertically homed), then move it up
   if(mux.readDigitalValue(MultiplexerInput::VerticalLowerLimit)) {
-    result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
+    result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
   }
 
   // Otherwise, just move it down and then shut off the LED
@@ -272,7 +273,7 @@ MovementResult pauseOrUnpause() {
     // Otherwise, set it down carefully
     else tonearmSetRpm = 3;
 
-    result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, MOVEMENT_TIMEOUT_STEPS, tonearmSetRpm);
+    result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, tonearmSetRpm);
 
     digitalWrite(PAUSE_STATUS_LED, LOW);
   }
@@ -314,13 +315,13 @@ unsigned int getActiveSensorCalibration() {
 
   // I only have 10k pots, which ranges between 615-1023, and I only want to allow
   // values between 0 and 50.
-  calibration = (calibration - 615) * 50 / 408;
+  calibration = ((calibration - 615) * 50 / 408) * 10;
 
   if(calibration < 0) 
     calibration = 0;
 
-  else if(calibration > 50) 
-    calibration = 50;
+  else if(calibration > 500) 
+    calibration = 500;
 
   return calibration;
 }
