@@ -58,7 +58,11 @@ TonearmMovementController tonearmController = TonearmMovementController(
 
 // The motors used in this project are 28BYJ-48 stepper motors, which I've found to cap at 11 RPM 
 // before becoming too unreliable. 8 or 9 I've found to be a good balance for speed and reliability at 5v DC.
-#define DEFAULT_MOVEMENT_RPM 8
+#define VERTICAL_DEFAULT_MOVEMENT_RPM 8
+
+// The horizontal motor is running on 12v, so it has a bit more power behind it. This higher speed is needed because
+// of the 4:81.5 gearing ratio 
+#define HORIZONTAL_DEFAULT_MOVEMENT_RPM 20
 
 // These are timeouts used for error checking, so the hardware doesn't damage itself.
 // Essentially, if the steps exceed this number and the motor has not yet reached its
@@ -117,7 +121,7 @@ void setup() {
 
   // If the turntable is turned on to "automatic," then home the whole tonearm if it is not already home.
   if(mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) == AutoManualSwitchPosition::Automatic && 
-    !mux.readDigitalValue(MultiplexerInput::HorizontalHomeOpticalSensor)) {
+    !mux.readDigitalValue(MultiplexerInput::HorizontalHomeOr12InchOpticalSensor)) {
     MovementResult currentMovementStatus = homeRoutine();
   }
 
@@ -154,7 +158,7 @@ void monitorCommandButtons() {
 
     // If the tonearm is past the location of the home sensor, then this button will home it. Otherwise, it will execute
     // the play routine.
-    if(mux.readDigitalValue(MultiplexerInput::HorizontalHomeOpticalSensor)) 
+    if(mux.readDigitalValue(MultiplexerInput::HorizontalHomeOr12InchOpticalSensor)) 
       currentMovementStatus = playRoutine();
     else 
       currentMovementStatus = homeRoutine();
@@ -233,7 +237,7 @@ MovementResult homeRoutine() {
   if(result != MovementResult::Success) return result;
 
   // -200 calibration to push the tonearm past the home sensor, into the homing mount
-  result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, -200, DEFAULT_MOVEMENT_RPM + 1);
+  result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOr12InchOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, -200, DEFAULT_MOVEMENT_RPM + 1);
   if(result != MovementResult::Success) return result;
 
   tonearmController.horizontalRelativeMove(35, DEFAULT_MOVEMENT_RPM); // This is so the tonearm doesn't get "stuck" on the homing mount that it just rammed into
@@ -266,7 +270,7 @@ MovementResult pauseOrUnpause() {
     uint8_t tonearmSetRpm = 0;
 
     // If the tonearm is hovering over home position, then just go down at default speed
-    if(mux.readDigitalValue(MultiplexerInput::HorizontalHomeOpticalSensor)) {
+    if(mux.readDigitalValue(MultiplexerInput::HorizontalHomeOr12InchOpticalSensor)) {
       tonearmSetRpm = DEFAULT_MOVEMENT_RPM;
     }
 
@@ -291,7 +295,7 @@ MultiplexerInput getActivePlaySensor() {
 
   // If only RecordSizeSelector2 is HIGH, we are using the 12" sensor
   else if (mux.readDigitalValue(MultiplexerInput::RecordSizeSelector2))
-    return MultiplexerInput::HorizontalPlay12InchOpticalSensor;
+    return MultiplexerInput::HorizontalHomeOr12InchOpticalSensor;
 
   // If NEITHER RecordSizeSelectors are HIGH, we are using the 10" sensor
   return MultiplexerInput::HorizontalPlay10InchOpticalSensor;
