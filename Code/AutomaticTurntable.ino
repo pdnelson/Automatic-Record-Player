@@ -62,7 +62,8 @@ TonearmMovementController tonearmController = TonearmMovementController(
 
 // The horizontal motor is running on 12v, so it has a bit more power behind it. This higher speed is needed because
 // of the 4:81.5 gearing ratio 
-#define HORIZONTAL_DEFAULT_MOVEMENT_RPM 20
+#define HORIZONTAL_HOME_MOVEMENT_RPM 20
+#define HORIZONTAL_PLAY_MOVEMENT_RPM 15
 
 // These are timeouts used for error checking, so the hardware doesn't damage itself.
 // Essentially, if the steps exceed this number and the motor has not yet reached its
@@ -208,16 +209,14 @@ MovementResult playRoutine() {
 
   int calibration = getActiveSensorCalibration();
 
-  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, VERTICAL_DEFAULT_MOVEMENT_RPM);
   if(result != MovementResult::Success) return result;
 
-  result = tonearmController.moveTonearmHorizontally(getActivePlaySensor(), HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, calibration, DEFAULT_MOVEMENT_RPM + 1);
+  result = tonearmController.moveTonearmHorizontally(getActivePlaySensor(), HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, calibration, 9);
   if(result != MovementResult::Success) return result;
 
   result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, 3);
   if(result != MovementResult::Success) return result;
-
-  tonearmController.horizontalRelativeMove(100, DEFAULT_MOVEMENT_RPM);
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
   
@@ -233,19 +232,15 @@ MovementResult homeRoutine() {
 
   MovementResult result = MovementResult::None;
 
-  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, VERTICAL_DEFAULT_MOVEMENT_RPM);
   if(result != MovementResult::Success) return result;
 
   // -200 calibration to push the tonearm past the home sensor, into the homing mount
-  result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOr12InchOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, -200, DEFAULT_MOVEMENT_RPM + 1);
+  result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOr12InchOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, -200, 9);
   if(result != MovementResult::Success) return result;
 
-  tonearmController.horizontalRelativeMove(35, DEFAULT_MOVEMENT_RPM); // This is so the tonearm doesn't get "stuck" on the homing mount that it just rammed into
-
-  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, VERTICAL_DEFAULT_MOVEMENT_RPM);
   if(result != MovementResult::Success) return result;
-
-  tonearmController.horizontalRelativeMove(200, DEFAULT_MOVEMENT_RPM); // Disengage the gear from the tonearm so it doesn't get stuck
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
 
@@ -262,7 +257,7 @@ MovementResult pauseOrUnpause() {
 
   // If the vertical lower limit is pressed (i.e., the tonearm is vertically homed), then move it up
   if(mux.readDigitalValue(MultiplexerInput::VerticalLowerLimit)) {
-    result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
+    result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, VERTICAL_DEFAULT_MOVEMENT_RPM);
   }
 
   // Otherwise, just move it down and then shut off the LED
@@ -271,7 +266,7 @@ MovementResult pauseOrUnpause() {
 
     // If the tonearm is hovering over home position, then just go down at default speed
     if(mux.readDigitalValue(MultiplexerInput::HorizontalHomeOr12InchOpticalSensor)) {
-      tonearmSetRpm = DEFAULT_MOVEMENT_RPM;
+      tonearmSetRpm = VERTICAL_DEFAULT_MOVEMENT_RPM;
     }
 
     // Otherwise, set it down carefully
