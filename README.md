@@ -92,8 +92,8 @@ The selected potentiometer is determined by the Active Play Sensor Selector.
   - S4: Pause button
   - S5: Horizontal "play" 7" optical sensor
   - S6: Horizontal "play" 10" optical sensor
-  - S7: Horizontal "play" 12" optical sensor
-  - S8: Horizontal "home" optical sensor
+  - S7: UNUSED
+  - S8: Horizontal "home"/"play" 12" optical sensor
   - S9: Record Size Selector 1
   - S10: Record Size Selector 2
   - S11: Horizontal "pickup" optical sensor
