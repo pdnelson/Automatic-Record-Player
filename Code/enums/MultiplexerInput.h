@@ -21,22 +21,10 @@ enum MultiplexerInput : uint8_t {
     // S4
     PauseButton = 3,
 
-    // The 7" "play" position optical sensor, which indicates where the tonearm would drop to begin playing a 7" record.
-    // S5
-    HorizontalPlay7InchOpticalSensor = 4,
-
-    // The 10" "play" position optical sensor, which indicates where the tonearm would drop to begin playing a 10" record.
-    // S6
-    HorizontalPlay10InchOpticalSensor = 5,
-
-    // The 12" "play" position optical sensor, which indicates where the tonearm would drop to begin playing a 12" record.
-    // S7
-    //HorizontalPlay12InchOpticalSensor = 6, (may be deprecated soon)
-
-    // The "home" or 12" "play" position optical sensor, depending on which direction the tonearm is moving. If the tonearm is moving
-    // counter-clockwise, this sensor acts as the "home" sensor, whereas if it is moving clockwise, it acts as the 12" play sensor.
+    // The "home" or "play" position optical sensor, depending on which direction the tonearm is moving. If the tonearm is moving
+    // counter-clockwise, this sensor acts as the "home" sensor, whereas if it is moving clockwise, it acts as the play sensor.
     // S8
-    HorizontalHomeOr12InchOpticalSensor = 7,
+    HorizontalHomeOrPlayOpticalSensor = 7,
 
     // This, used together with RecordSizeSelector2, tells the software which record size it should be looking for.
     // If this is HIGH while RecordSizeSelector2 is LOW, the software will use the 7" optical sensor.

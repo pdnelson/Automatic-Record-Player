@@ -15,8 +15,8 @@
 
 #define STEPS_PER_REVOLUTION 2048
 
-// These motor pins channel into a quad 2-channel demultiplexer, so that either the vertical or horizontal motors receive
-// the voltages. Only one of these motors will ever be moving at once
+// These motor pins channel into four 2-channel demultiplexers, so that either the vertical or horizontal motor receives
+// the pulses. Only one of these motors can ever be moving at once.
 #define MOTOR_PIN1 10
 #define MOTOR_PIN2 9
 #define MOTOR_PIN3 8
@@ -58,18 +58,20 @@ TonearmMovementController tonearmController = TonearmMovementController(
 
 // The motors used in this project are 28BYJ-48 stepper motors, which I've found to cap at 11 RPM 
 // before becoming too unreliable. 8 or 9 I've found to be a good balance for speed and reliability at 5v DC.
-#define VERTICAL_DEFAULT_MOVEMENT_RPM 8
+#define DEFAULT_MOVEMENT_RPM 8
 
-// The horizontal motor is running on 12v, so it has a bit more power behind it. This higher speed is needed because
-// of the 4:81.5 gearing ratio 
-#define HORIZONTAL_HOME_MOVEMENT_RPM 20
-#define HORIZONTAL_PLAY_MOVEMENT_RPM 15
+// The horizontal motor needs to run a bit faster because of the gearing ratio
+#define HORIZONTAL_HOME_MOVEMENT_RPM 9
+
+// These are calibration values used to position the tonearm approximately where it needs to go. These values are finished off
+// by adding the potentiometer values.
+#define STEPS_FROM_PLAY_SENSOR_HOME 100
 
 // These are timeouts used for error checking, so the hardware doesn't damage itself.
 // Essentially, if the steps exceed this number and the motor has not yet reached its
 // destination, an error has occurred.
 #define VERTICAL_MOVEMENT_TIMEOUT_STEPS 1000
-#define HORIZONTAL_MOVEMENT_TIMEOUT_STEPS 6000
+#define HORIZONTAL_MOVEMENT_TIMEOUT_STEPS 3000
 
 // The 7-segment display is used for the following:
 // - Displaying the speed that the turntable is spinning.
@@ -81,16 +83,10 @@ Adafruit_7segment sevSeg = Adafruit_7segment();
 double lastSevSegValue = 0.0;
 
 // All of these fields are used to calculate the speed that the turntable is spinning.
-#define SPEED_SENSOR 1
+#define SPEED_SENSOR A3
 volatile unsigned long currMillisSpeed = millis();
 volatile unsigned long lastMillisSpeed = currMillisSpeed;
 volatile double currSpeed;
-
-// Calibration potentiometers are used to move the tonearm a few steps past the sensor, so that the user has an easy way
-// to fine-tune where exactly it should be set down (or picked up)
-#define CALIBRATION_POT_7IN A0
-#define CALIBRATION_POT_10IN A1
-#define CALIBRATION_POT_12IN A2
 
 void setup() {
   //Serial.begin(SERIAL_SPEED);
@@ -122,7 +118,7 @@ void setup() {
 
   // If the turntable is turned on to "automatic," then home the whole tonearm if it is not already home.
   if(mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) == AutoManualSwitchPosition::Automatic && 
-    !mux.readDigitalValue(MultiplexerInput::HorizontalHomeOr12InchOpticalSensor)) {
+    !mux.readDigitalValue(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor)) {
     MovementResult currentMovementStatus = homeRoutine();
   }
 
@@ -159,7 +155,7 @@ void monitorCommandButtons() {
 
     // If the tonearm is past the location of the home sensor, then this button will home it. Otherwise, it will execute
     // the play routine.
-    if(mux.readDigitalValue(MultiplexerInput::HorizontalHomeOr12InchOpticalSensor)) 
+    if(mux.readDigitalValue(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor)) 
       currentMovementStatus = playRoutine();
     else 
       currentMovementStatus = homeRoutine();
@@ -172,7 +168,7 @@ void monitorCommandButtons() {
 
 void updateSevenSegmentDisplay() {
 
-  double currSevSegValue = 0.0;
+  double currSevSegValue;
 
   // If the calibration button is being pressed, display the current value of the active potentiometer
   if(mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue)) {
@@ -198,7 +194,7 @@ void updateSevenSegmentDisplay() {
   lastSevSegValue = currSevSegValue;
 }
 
-// Move the tonearm clockwise to the active play sensor, designated by getActivePlaySensor()
+// Move the tonearm clockwise to the play sensor
 // This is a multi-movement routine, meaning that multiple tonearm movements are executed. If one of those movements fails, the
 // whole routine is aborted.
 MovementResult playRoutine() {
@@ -209,14 +205,16 @@ MovementResult playRoutine() {
 
   int calibration = getActiveSensorCalibration();
 
-  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, VERTICAL_DEFAULT_MOVEMENT_RPM);
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
   if(result != MovementResult::Success) return result;
 
-  result = tonearmController.moveTonearmHorizontally(getActivePlaySensor(), HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, calibration, 9);
+  result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, calibration, DEFAULT_MOVEMENT_RPM);
   if(result != MovementResult::Success) return result;
 
   result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, 3);
   if(result != MovementResult::Success) return result;
+
+  digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
   
@@ -232,15 +230,16 @@ MovementResult homeRoutine() {
 
   MovementResult result = MovementResult::None;
 
-  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, VERTICAL_DEFAULT_MOVEMENT_RPM);
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
   if(result != MovementResult::Success) return result;
 
-  // -200 calibration to push the tonearm past the home sensor, into the homing mount
-  result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOr12InchOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, -200, 9);
+  result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, STEPS_FROM_PLAY_SENSOR_HOME, HORIZONTAL_HOME_MOVEMENT_RPM);
   if(result != MovementResult::Success) return result;
 
-  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, VERTICAL_DEFAULT_MOVEMENT_RPM);
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
   if(result != MovementResult::Success) return result;
+
+  digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
 
   digitalWrite(MOVEMENT_STATUS_LED, LOW);
 
@@ -257,7 +256,7 @@ MovementResult pauseOrUnpause() {
 
   // If the vertical lower limit is pressed (i.e., the tonearm is vertically homed), then move it up
   if(mux.readDigitalValue(MultiplexerInput::VerticalLowerLimit)) {
-    result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, VERTICAL_DEFAULT_MOVEMENT_RPM);
+    result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
   }
 
   // Otherwise, just move it down and then shut off the LED
@@ -265,8 +264,8 @@ MovementResult pauseOrUnpause() {
     uint8_t tonearmSetRpm = 0;
 
     // If the tonearm is hovering over home position, then just go down at default speed
-    if(mux.readDigitalValue(MultiplexerInput::HorizontalHomeOr12InchOpticalSensor)) {
-      tonearmSetRpm = VERTICAL_DEFAULT_MOVEMENT_RPM;
+    if(mux.readDigitalValue(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor)) {
+      tonearmSetRpm = DEFAULT_MOVEMENT_RPM;
     }
 
     // Otherwise, set it down carefully
@@ -280,49 +279,20 @@ MovementResult pauseOrUnpause() {
   return result;
 }
 
-// This uses RecordSizeSelector1 and RecordSizeSelector2 to determine the record size the user
-// currently has selected.
-MultiplexerInput getActivePlaySensor() {
-
-  // If only RecordSizeSelector1 is HIGH, we are using the 7" sensor
-  if(mux.readDigitalValue(MultiplexerInput::RecordSizeSelector1))
-    return MultiplexerInput::HorizontalPlay7InchOpticalSensor;
-
-  // If only RecordSizeSelector2 is HIGH, we are using the 12" sensor
-  else if (mux.readDigitalValue(MultiplexerInput::RecordSizeSelector2))
-    return MultiplexerInput::HorizontalHomeOr12InchOpticalSensor;
-
-  // If NEITHER RecordSizeSelectors are HIGH, we are using the 10" sensor
-  return MultiplexerInput::HorizontalPlay10InchOpticalSensor;
-}
-
 // Returns the calibration step offset for the given sensor.
 // The returned value will be the number of steps (clockwise or counterclockwise) that the horizontal motor should move.
 unsigned int getActiveSensorCalibration() {
-  int calibration = 0;
 
-    // If only RecordSizeSelector1 is HIGH (or BOTH RecordSelector1 and 2 are HIGH), we are using the 7" sensor
+  // If only RecordSizeSelector1 is HIGH (or BOTH RecordSelector1 and 2 are HIGH), we are using the 7" sensor
   if(mux.readDigitalValue(MultiplexerInput::RecordSizeSelector1))
-    calibration = analogRead(CALIBRATION_POT_7IN); 
+    return 7; 
 
   // If only RecordSizeSelector2 is HIGH, we are using the 12" sensor
   else if (mux.readDigitalValue(MultiplexerInput::RecordSizeSelector2))
-    calibration = analogRead(CALIBRATION_POT_12IN);
+    return 12;
 
   // If NEITHER RecordSizeSelectors are HIGH, we are using the 10" sensor
-  else calibration = analogRead(CALIBRATION_POT_10IN);
-
-  // I only have 10k pots, which ranges between 615-1023, and I only want to allow
-  // values between 0 and 50.
-  calibration = ((calibration - 615) * 50 / 408) * 10;
-
-  if(calibration < 0) 
-    calibration = 0;
-
-  else if(calibration > 500) 
-    calibration = 500;
-
-  return calibration;
+  else return 10;
 }
 
 // Each time the interrupt calls this function, the current milliseconds are polled, and compared against the last polling

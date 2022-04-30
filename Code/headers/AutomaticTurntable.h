@@ -14,7 +14,6 @@
     MovementResult pauseOrUnpause();
 
     /* Status/settings */
-    MultiplexerInput getActivePlaySensor();
     unsigned int getActiveSensorCalibration();
 
     /* Turntable speed */

@@ -1,7 +1,7 @@
 #ifndef AUTOMANUALSWITCHPOSITION_H
 #define AUTOMANUALSWITCHPOSITION_H
 
-// Various errors that the turntable could encounter during operation
+// Each position that the Auto/Manual power switch could be in.
 enum AutoManualSwitchPosition : uint8_t {
 
     // The Auto/Manual switch is set to "Manual"

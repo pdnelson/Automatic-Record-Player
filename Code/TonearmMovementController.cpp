@@ -37,7 +37,6 @@ MovementResult TonearmMovementController::moveTonearmHorizontally(uint8_t destin
 
       // If the sensor isn't hit in the expected time, the movement failed.
       if(movementStepCount++ >= timeout) {
-        this->horizontalRelativeMove(200, 8); // Move clockwise to unlock horizontal gears
         digitalWrite(this->horizontalSolenoidPin, LOW);
 
         if(movementDirection == TonearmMovementDirection::Clockwise)
@@ -49,8 +48,6 @@ MovementResult TonearmMovementController::moveTonearmHorizontally(uint8_t destin
     }
 
     this->horizontalRelativeMove(calibration, speed); // Move tonearm additional steps to account for calibration set by rear potentiometers
-    delay(250); // Verify movement has truly ceased before releasing the solenoid
-    digitalWrite(this->horizontalSolenoidPin, LOW);
 
     this->releaseCurrentFromMotors();
 
