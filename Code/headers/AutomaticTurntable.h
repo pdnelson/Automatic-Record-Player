@@ -1,12 +1,15 @@
 #include "../enums/MultiplexerInput.h"
 #include "../enums/MovementResult.h"
+#include "../enums/RecordSize.h"
 
 #ifndef AutoTurntable_h
 #define AutoTurntable_h
 
     /* Main loop functions */
     void monitorCommandButtons();
-    void updateSevenSegmentDisplay();
+    void monitorSevenSegmentInput();
+    void calibrationSettingLoop();
+    void updateSevenSegmentDisplay(double newValue);
 
     /* Routine commands */
     MovementResult playRoutine();
@@ -14,7 +17,9 @@
     MovementResult pauseOrUnpause();
 
     /* Status/settings */
-    unsigned int getActiveSensorCalibration();
+    uint16_t getActiveSensorCalibration();
+    RecordSize getActiveRecordSize();
+    void updateCalibrationEEPROMValues(uint16_t old7In, uint16_t old10In, uint16_t old12In);
 
     /* Turntable speed */
     void calculateTurntableSpeed();

@@ -4,12 +4,16 @@
 #include "enums/MultiplexerInput.h"
 #include "enums/MovementResult.h"
 #include "enums/AutoManualSwitchPosition.h"
+#include "enums/RecordSize.h"
 #include "TonearmMovementController.h"
 
 // Used for 7-segment display
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include "Adafruit_LEDBackpack.h"
+
+// Used for calibration storage
+#include <EEPROM.h>
 
 //#define SERIAL_SPEED 115200
 
@@ -67,6 +71,20 @@ TonearmMovementController tonearmController = TonearmMovementController(
 // by adding the potentiometer values.
 #define STEPS_FROM_PLAY_SENSOR_HOME 100
 
+// These are calibration values set by the user to tell the tonearm how many steps to go past the "home" reference optical
+// sensor.
+uint16_t calibration7Inch = 0;
+uint16_t calibration10Inch = 0;
+uint16_t calibration12Inch = 0;
+
+// These are the values that determine the slowest that each calibration value may increment/decrement when holding a button
+#define CALIBRATION_HOLD_CHANGE_MS 500 // The interval between value updates
+#define CALIBRATION_HOLD_CHANGE 5 // The number of updates before the change MS decreases
+
+#define CALIBRATION_7IN_EEPROM_START_ADDRESS 0
+#define CALIBRATION_10IN_EEPROM_START_ADDRESS 2
+#define CALIBRATION_12IN_EEPROM_START_ADDRESS 4
+
 // These are timeouts used for error checking, so the hardware doesn't damage itself.
 // Essentially, if the steps exceed this number and the motor has not yet reached its
 // destination, an error has occurred.
@@ -100,8 +118,18 @@ void setup() {
   mux.setDelayMicroseconds(10);
 
   sevSeg.begin(0x70);
-  sevSeg.print("JHI");
+  sevSeg.print(0.0);
   sevSeg.writeDisplay();
+
+  // Load calibration values from EEPROM
+  calibration7Inch = (EEPROM.read(CALIBRATION_7IN_EEPROM_START_ADDRESS) << 8 ) + EEPROM.read(CALIBRATION_7IN_EEPROM_START_ADDRESS + 1);
+  calibration10Inch = (EEPROM.read(CALIBRATION_10IN_EEPROM_START_ADDRESS) << 8 ) + EEPROM.read(CALIBRATION_10IN_EEPROM_START_ADDRESS + 1);
+  calibration12Inch = (EEPROM.read(CALIBRATION_12IN_EEPROM_START_ADDRESS) << 8 ) + EEPROM.read(CALIBRATION_12IN_EEPROM_START_ADDRESS + 1);
+
+  // Validate that calibration values are within the accepted range
+  if(calibration7Inch > 2500) calibration7Inch = 0;
+  if(calibration10Inch > 2500) calibration10Inch = 0;
+  if(calibration12Inch > 2500) calibration12Inch = 0;
 
   // Begin startup light show
   delay(100);
@@ -138,7 +166,7 @@ void loop() {
   digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
 
   monitorCommandButtons();
-  updateSevenSegmentDisplay();
+  monitorSevenSegmentInput();
 }
 
 // When a command button is pressed (i.e. Home/Play, or Pause/Unpause), then its respective command will be executed.
@@ -166,32 +194,71 @@ void monitorCommandButtons() {
   }
 }
 
-void updateSevenSegmentDisplay() {
+// This will allow the 7-segment display to either display the current turntable speed from the input of the 
+// speed sensor, or one of the three calibration values.
+void monitorSevenSegmentInput() {
 
-  double currSevSegValue;
+  double newValue;
 
-  // If the calibration button is being pressed, display the current value of the active potentiometer
+  // If the calibration button is being pressed, enter "calibration" mode so the user can view or modify
+  // values.
   if(mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue)) {
-    currSevSegValue = getActiveSensorCalibration();
+    calibrationSettingLoop();
   }
 
-  // Otherwise, display the turntable speed
-  else {
+  // If 3 seconds elapse without a speed sensor interrupt, we can assume that the turntable has stopped.
+  if(millis() - currMillisSpeed > 3000 && currSpeed > 0.0) {
+    newValue = 0.0;
+  }
+  else newValue = currSpeed;
 
-    // If 3 seconds elapse without a speed sensor interrupt, we can assume that the turntable has stopped.
-    if(millis() - currMillisSpeed > 3000 && currSpeed > 0.0) {
-      currSevSegValue = 0.0;
+  updateSevenSegmentDisplay(newValue);
+}
+
+// This loop is what is executed while in "calibration" mode. This implementation allows the user to switch between
+// all three calibrations while having the button held
+void calibrationSettingLoop() {
+
+  uint16_t calibrationDisplayValue = 0;
+
+  // Keep track of the old values so we can decide which ones to save in the EEPROM
+  uint16_t old7In = calibration7Inch;
+  uint16_t old10In = calibration10Inch;
+  uint16_t old12In = calibration12Inch;
+
+
+  while(mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue)) {
+    if(mux.readDigitalValue(MultiplexerInput::PauseButton) && calibrationDisplayValue < 2499) {
+      switch(getActiveRecordSize()) {
+        case RecordSize::Rec7Inch: calibrationDisplayValue = calibration7Inch++; break;
+        case RecordSize::Rec10Inch: calibrationDisplayValue = calibration10Inch++; break;
+        case RecordSize::Rec12Inch: calibrationDisplayValue = calibration12Inch++;
+      }
     }
-    else currSevSegValue = currSpeed;
+    else if(mux.readDigitalValue(MultiplexerInput::PlayHomeButton) && calibrationDisplayValue > 1) {
+      switch(getActiveRecordSize()) {
+        case RecordSize::Rec7Inch: calibrationDisplayValue = calibration7Inch--; break;
+        case RecordSize::Rec10Inch: calibrationDisplayValue = calibration10Inch--; break;
+        case RecordSize::Rec12Inch: calibrationDisplayValue = calibration12Inch--;
+      }
+    }
+    else {
+      calibrationDisplayValue = getActiveSensorCalibration();
+    }
+
+    updateSevenSegmentDisplay((double)calibrationDisplayValue);
   }
 
+  updateCalibrationEEPROMValues(old7In, old10In, old12In);
+}
+
+void updateSevenSegmentDisplay(double newValue) {
   // Only re-write the display if the number will be different
-  if(currSevSegValue != lastSevSegValue) {
-    sevSeg.print(currSevSegValue);
+  if(newValue != lastSevSegValue) {
+    sevSeg.print(newValue);
     sevSeg.writeDisplay();
+    lastSevSegValue = newValue;
   }
-
-  lastSevSegValue = currSevSegValue;
 }
 
 // Move the tonearm clockwise to the play sensor
@@ -281,18 +348,54 @@ MovementResult pauseOrUnpause() {
 
 // Returns the calibration step offset for the given sensor.
 // The returned value will be the number of steps (clockwise or counterclockwise) that the horizontal motor should move.
-unsigned int getActiveSensorCalibration() {
+uint16_t getActiveSensorCalibration() {
+  switch(getActiveRecordSize()) {
+    case RecordSize::Rec7Inch:
+      return calibration7Inch;
+    case RecordSize::Rec10Inch:
+      return calibration10Inch;
+    case RecordSize::Rec12Inch:
+      return calibration12Inch;
+  }
+}
 
+RecordSize getActiveRecordSize() {
   // If only RecordSizeSelector1 is HIGH (or BOTH RecordSelector1 and 2 are HIGH), we are using the 7" sensor
   if(mux.readDigitalValue(MultiplexerInput::RecordSizeSelector1))
-    return 7; 
+    return RecordSize::Rec7Inch; 
 
   // If only RecordSizeSelector2 is HIGH, we are using the 12" sensor
   else if (mux.readDigitalValue(MultiplexerInput::RecordSizeSelector2))
-    return 12;
+    return RecordSize::Rec12Inch;
 
   // If NEITHER RecordSizeSelectors are HIGH, we are using the 10" sensor
-  else return 10;
+  else return RecordSize::Rec10Inch;
+}
+
+// This will update all numbers that have changed
+void updateCalibrationEEPROMValues(uint16_t old7In, uint16_t old10In, uint16_t old12In) {
+  // We only try to write each value to the EEPROM if it has been changed.
+  if(old7In != calibration7Inch) {
+    EEPROM.write(CALIBRATION_7IN_EEPROM_START_ADDRESS, calibration7Inch >> 8);
+    EEPROM.write(CALIBRATION_7IN_EEPROM_START_ADDRESS + 1, calibration7Inch  & 0xFF);
+  }
+
+  if(old10In != calibration10Inch) {
+    EEPROM.write(CALIBRATION_10IN_EEPROM_START_ADDRESS, calibration10Inch >> 8);
+    EEPROM.write(CALIBRATION_10IN_EEPROM_START_ADDRESS + 1, calibration10Inch  & 0xFF);
+  }
+
+  if(old12In != calibration12Inch) {
+    EEPROM.write(CALIBRATION_12IN_EEPROM_START_ADDRESS, calibration12Inch >> 8);
+    EEPROM.write(CALIBRATION_12IN_EEPROM_START_ADDRESS + 1, calibration12Inch  & 0xFF);
+  }
+
+  // If any values were changed, blink the play LED once to signify that the data was saved
+  if(old12In != calibration12Inch || old10In != calibration10Inch || old7In != calibration7Inch) {
+    digitalWrite(MOVEMENT_STATUS_LED, HIGH);
+    delay(250);
+    digitalWrite(MOVEMENT_STATUS_LED, LOW);
+  }
 }
 
 // Each time the interrupt calls this function, the current milliseconds are polled, and compared against the last polling
