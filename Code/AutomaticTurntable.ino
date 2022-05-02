@@ -77,9 +77,12 @@ uint16_t calibration7Inch = 0;
 uint16_t calibration10Inch = 0;
 uint16_t calibration12Inch = 0;
 
-// These are the values that determine the slowest that each calibration value may increment/decrement when holding a button
-#define CALIBRATION_HOLD_CHANGE_MS 500 // The interval between value updates
-#define CALIBRATION_HOLD_CHANGE 5 // The number of updates before the change MS decreases
+// These are the values that determine how slow/fast that each calibration value may increment/decrement when holding a button
+#define CALIBRATION_HOLD_CHANGE_MS 200 // The interval between value updates
+#define CALIBRATION_HOLD_DECREMENT_MS 20 // The number of MS removed from the overall change MS when the hold change interval is reached
+#define CALIBRATION_HOLD_LOWEST_MS 20 // The lowest number that the hold change MS can go to before not being subtracted from anymore.
+#define CALIBRATION_HOLD_CHANGE_INTERVAL 3 // The number of updates before the change MS decreases
+#define CALIBRATION_DEBOUNCE_MS 100
 
 #define CALIBRATION_7IN_EEPROM_START_ADDRESS 0
 #define CALIBRATION_10IN_EEPROM_START_ADDRESS 2
@@ -226,24 +229,64 @@ void calibrationSettingLoop() {
   uint16_t old10In = calibration10Inch;
   uint16_t old12In = calibration12Inch;
 
+  // Delay/debounce
+  unsigned long lastButtonPressMsDelay = __LONG_MAX__;
+  unsigned long lastButtonPressMsDebounce = __LONG_MAX__;
+  unsigned long currButtonPressMs = 0;
+  bool buttonDelay = true;
+  bool buttonDebounce = true;
+  
+  // Iteration counting
+  uint16_t buttonPressIterationCount = 0;
+  uint16_t calibrationHoldChangeIterationCount = CALIBRATION_HOLD_CHANGE_INTERVAL;
+  uint16_t calibrationHoldChangeInterval = CALIBRATION_HOLD_CHANGE_MS;
+  uint16_t calibrationDebounceInterval = CALIBRATION_DEBOUNCE_MS;
 
+  // With this button-pressing implementation, we are tracking two separate values: the delay and debounce.
+  // For the delay, this is incrementing/decrementing the calibration value x number of times/second as they
+  // hold the button, while the debounce value prevents too many button presses from being registered at once.
+  // The delay will gradually increase the longer an increment/decrement button is held, so that further values
+  // can be reached more quickly; this is tracked by the "iteration counting" variables.
   while(mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue)) {
-    if(mux.readDigitalValue(MultiplexerInput::PauseButton) && calibrationDisplayValue < 2499) {
+    currButtonPressMs = millis();
+    buttonDelay = currButtonPressMs - lastButtonPressMsDelay > calibrationHoldChangeInterval;
+    buttonDebounce = currButtonPressMs - lastButtonPressMsDebounce > calibrationDebounceInterval;
+
+    if(mux.readDigitalValue(MultiplexerInput::PauseButton) && calibrationDisplayValue < 2499 && buttonDelay && buttonDebounce) {
       switch(getActiveRecordSize()) {
         case RecordSize::Rec7Inch: calibrationDisplayValue = calibration7Inch++; break;
         case RecordSize::Rec10Inch: calibrationDisplayValue = calibration10Inch++; break;
         case RecordSize::Rec12Inch: calibrationDisplayValue = calibration12Inch++;
       }
+      lastButtonPressMsDelay = currButtonPressMs;
+      lastButtonPressMsDebounce = currButtonPressMs;
+      buttonPressIterationCount++;
     }
-    else if(mux.readDigitalValue(MultiplexerInput::PlayHomeButton) && calibrationDisplayValue > 1) {
+    else if(mux.readDigitalValue(MultiplexerInput::PlayHomeButton) && calibrationDisplayValue > 1 && buttonDelay && buttonDebounce) {
       switch(getActiveRecordSize()) {
         case RecordSize::Rec7Inch: calibrationDisplayValue = calibration7Inch--; break;
         case RecordSize::Rec10Inch: calibrationDisplayValue = calibration10Inch--; break;
         case RecordSize::Rec12Inch: calibrationDisplayValue = calibration12Inch--;
       }
+      lastButtonPressMsDelay = currButtonPressMs;
+      lastButtonPressMsDebounce = currButtonPressMs;
+      buttonPressIterationCount++;
     }
-    else {
+    else if(!mux.readDigitalValue(MultiplexerInput::PauseButton) && !mux.readDigitalValue(MultiplexerInput::PlayHomeButton)) {
+      buttonPressIterationCount = 0;
+      calibrationHoldChangeIterationCount = CALIBRATION_HOLD_CHANGE_INTERVAL;
+      calibrationHoldChangeInterval = CALIBRATION_HOLD_CHANGE_MS;
+      lastButtonPressMsDelay = __LONG_MAX__;
+      calibrationDebounceInterval = CALIBRATION_DEBOUNCE_MS;
       calibrationDisplayValue = getActiveSensorCalibration();
+    }
+
+    // If we have reached the destination number of iterations with a button held, then we can increase the speed at which 
+    // numbers increase/decrease by.
+    if(buttonPressIterationCount == calibrationHoldChangeIterationCount && calibrationHoldChangeInterval > CALIBRATION_HOLD_LOWEST_MS) {
+      calibrationHoldChangeInterval = calibrationHoldChangeInterval - CALIBRATION_HOLD_DECREMENT_MS;
+      buttonPressIterationCount = 0;
+      calibrationDebounceInterval = 0; // Once the user holds the button so long, we know the debounce interval is no longer necessary
     }
 
     updateSevenSegmentDisplay((double)calibrationDisplayValue);
