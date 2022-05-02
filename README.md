@@ -76,9 +76,9 @@ The selected potentiometer is determined by the Active Play Sensor Selector.
   - D13: Pause status LED
 
 - Analog
-  - A0: 7" position potentiometer
-  - A1: 10" position potentiometer
-  - A2: 12" position potentiometer
+  - A0: UNUSED
+  - A1: UNUSED
+  - A2: UNUSED
   - A3: Speed sensor (interrupt)
   - A4/SDA: 7-Segment Display Data
   - A5/SCL: 7-Segment Display Clock
