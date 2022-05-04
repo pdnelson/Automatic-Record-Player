@@ -62,14 +62,11 @@ TonearmMovementController tonearmController = TonearmMovementController(
 
 // The motors used in this project are 28BYJ-48 stepper motors, which I've found to cap at 11 RPM 
 // before becoming too unreliable. 8 or 9 I've found to be a good balance for speed and reliability at 5v DC.
-#define DEFAULT_MOVEMENT_RPM 8
-
-// The horizontal motor needs to run a bit faster because of the gearing ratio
-#define HORIZONTAL_HOME_MOVEMENT_RPM 9
+#define DEFAULT_MOVEMENT_RPM 10
 
 // These are calibration values used to position the tonearm approximately where it needs to go. These values are finished off
 // by adding the potentiometer values.
-#define STEPS_FROM_PLAY_SENSOR_HOME 100
+#define STEPS_FROM_PLAY_SENSOR_HOME -1025
 
 // These are calibration values set by the user to tell the tonearm how many steps to go past the "home" reference optical
 // sensor.
@@ -87,6 +84,10 @@ uint16_t calibration12Inch = 0;
 #define CALIBRATION_7IN_EEPROM_START_ADDRESS 0
 #define CALIBRATION_10IN_EEPROM_START_ADDRESS 2
 #define CALIBRATION_12IN_EEPROM_START_ADDRESS 4
+
+#define CALIBRATION_7IN_DEFAULT 7
+#define CALIBRATION_10IN_DEFAULT 10
+#define CALIBRATION_12IN_DEFAULT 12
 
 // These are timeouts used for error checking, so the hardware doesn't damage itself.
 // Essentially, if the steps exceed this number and the motor has not yet reached its
@@ -124,15 +125,24 @@ void setup() {
   sevSeg.print(0.0);
   sevSeg.writeDisplay();
 
-  // Load calibration values from EEPROM
-  calibration7Inch = (EEPROM.read(CALIBRATION_7IN_EEPROM_START_ADDRESS) << 8 ) + EEPROM.read(CALIBRATION_7IN_EEPROM_START_ADDRESS + 1);
-  calibration10Inch = (EEPROM.read(CALIBRATION_10IN_EEPROM_START_ADDRESS) << 8 ) + EEPROM.read(CALIBRATION_10IN_EEPROM_START_ADDRESS + 1);
-  calibration12Inch = (EEPROM.read(CALIBRATION_12IN_EEPROM_START_ADDRESS) << 8 ) + EEPROM.read(CALIBRATION_12IN_EEPROM_START_ADDRESS + 1);
+  // If the calibration button is being held, set calibration values to their defaults (but don't save them to the EEPROM)
+  // This mode is used so that the user can see if the 3-way switch is positioned correctly (with 7in pointing down, and 12in pointing up)
+  if(mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue)) {
+    calibration7Inch = CALIBRATION_7IN_DEFAULT;
+    calibration10Inch = CALIBRATION_10IN_DEFAULT;
+    calibration12Inch = CALIBRATION_12IN_DEFAULT;
+  }
+  else {
+    // Load calibration values from EEPROM
+    calibration7Inch = (EEPROM.read(CALIBRATION_7IN_EEPROM_START_ADDRESS) << 8) + EEPROM.read(CALIBRATION_7IN_EEPROM_START_ADDRESS + 1);
+    calibration10Inch = (EEPROM.read(CALIBRATION_10IN_EEPROM_START_ADDRESS) << 8) + EEPROM.read(CALIBRATION_10IN_EEPROM_START_ADDRESS + 1);
+    calibration12Inch = (EEPROM.read(CALIBRATION_12IN_EEPROM_START_ADDRESS) << 8) + EEPROM.read(CALIBRATION_12IN_EEPROM_START_ADDRESS + 1);
 
-  // Validate that calibration values are within the accepted range
-  if(calibration7Inch > 2500) calibration7Inch = 0;
-  if(calibration10Inch > 2500) calibration10Inch = 0;
-  if(calibration12Inch > 2500) calibration12Inch = 0;
+    // Validate that calibration values are within the accepted range
+    if(calibration7Inch > 2500) calibration7Inch = 0;
+    if(calibration10Inch > 2500) calibration10Inch = 0;
+    if(calibration12Inch > 2500) calibration12Inch = 0;
+  }
 
   // Begin startup light show
   delay(100);
@@ -209,8 +219,8 @@ void monitorSevenSegmentInput() {
     calibrationSettingLoop();
   }
 
-  // If 3 seconds elapse without a speed sensor interrupt, we can assume that the turntable has stopped.
-  if(millis() - currMillisSpeed > 3000 && currSpeed > 0.0) {
+  // If 1.5 seconds elapse without a speed sensor interrupt, we can assume that the turntable has stopped.
+  if(millis() - currMillisSpeed > 2500 && currSpeed > 0.0) {
     newValue = 0.0;
   }
   else newValue = currSpeed;
@@ -252,7 +262,7 @@ void calibrationSettingLoop() {
     buttonDelay = currButtonPressMs - lastButtonPressMsDelay > calibrationHoldChangeInterval;
     buttonDebounce = currButtonPressMs - lastButtonPressMsDebounce > calibrationDebounceInterval;
 
-    if(mux.readDigitalValue(MultiplexerInput::PauseButton) && calibrationDisplayValue < 2499 && buttonDelay && buttonDebounce) {
+    if(mux.readDigitalValue(MultiplexerInput::PauseButton) && calibrationDisplayValue < 1499 && buttonDelay && buttonDebounce) {
       switch(getActiveRecordSize()) {
         case RecordSize::Rec7Inch: calibrationDisplayValue = calibration7Inch++; break;
         case RecordSize::Rec10Inch: calibrationDisplayValue = calibration10Inch++; break;
@@ -343,7 +353,7 @@ MovementResult homeRoutine() {
   result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
   if(result != MovementResult::Success) return result;
 
-  result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, STEPS_FROM_PLAY_SENSOR_HOME, HORIZONTAL_HOME_MOVEMENT_RPM);
+  result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, STEPS_FROM_PLAY_SENSOR_HOME, DEFAULT_MOVEMENT_RPM);
   if(result != MovementResult::Success) return result;
 
   result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
