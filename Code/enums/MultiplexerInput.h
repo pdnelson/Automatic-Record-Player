@@ -21,6 +21,10 @@ enum MultiplexerInput : uint8_t {
     // S4
     PauseButton = 3,
 
+    UNUSED_MUX_S5 = 4,
+    UNUSED_MUX_S6 = 5,
+    UNUSED_MUX_S7 = 6,
+
     // The "home" or "play" position optical sensor, depending on which direction the tonearm is moving. If the tonearm is moving
     // counter-clockwise, this sensor acts as the "home" sensor, whereas if it is moving clockwise, it acts as the play sensor.
     // S8
@@ -43,10 +47,15 @@ enum MultiplexerInput : uint8_t {
     // S11
     HorizontalPickupOpticalSensor = 10,
 
+    UNUSED_MUX_S12 = 11,
+    UNUSED_MUX_S13 = 12,
+
     // This is a button that the user can press that will display, numerically, the value of an analog potentiometer that corresponds with the current
     // record size that is selected.
     // S14
     DisplayCalibrationValue = 13,
+
+    UNUSED_MUX_S15,
     
     // This is the switch used to determine whether the user turned on the turntable in automatic or manual mode.
     // Automatic: The tonearm will return to "home" at the end of a record.

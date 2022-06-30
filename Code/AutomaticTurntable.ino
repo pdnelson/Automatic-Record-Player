@@ -1,6 +1,7 @@
 #include <Stepper.h>
 #include <Multiplexer.h>
 #include "headers/AutomaticTurntable.h"
+#include "enums/ArduinoPin.h"
 #include "enums/MultiplexerInput.h"
 #include "enums/MovementResult.h"
 #include "enums/AutoManualSwitchPosition.h"
@@ -19,43 +20,31 @@
 
 #define STEPS_PER_REVOLUTION 2048
 
-// These motor pins channel into four 2-channel demultiplexers, so that either the vertical or horizontal motor receives
-// the pulses. Only one of these motors can ever be moving at once.
-#define MOTOR_PIN1 10
-#define MOTOR_PIN2 9
-#define MOTOR_PIN3 8
-#define MOTOR_PIN4 7
-Stepper TonearmMotor = Stepper(STEPS_PER_REVOLUTION, MOTOR_PIN4, MOTOR_PIN2, MOTOR_PIN3, MOTOR_PIN1);
+Stepper TonearmMotor = Stepper(
+  STEPS_PER_REVOLUTION, 
+  ArduinoPin::StepperPin4,
+  ArduinoPin::StepperPin2, 
+  ArduinoPin::StepperPin3, 
+  ArduinoPin::StepperPin1
+);
 
-// This is the pin used to select which motor we are moving, using the demultiplexer.
-#define MOTOR_AXIS_SELECTOR 11
-
-// This is used to engage the horizontal gears for movement. This is needed so that the gears aren't engaged
-// when a record is playing or any other times, otherwise the record would not be able to move the tonearm
-// very well...
-#define HORIZONTAL_GEARING_SOLENOID A7
-
-// Indicator lights so we can tell what the turntable is currently doing.
-#define MOVEMENT_STATUS_LED 12
-#define PAUSE_STATUS_LED 13
-
-// These are the selector pins for the multiplexer that is used to handle all inputs.
-#define MUX_OUTPUT 6
-#define MUX_SELECTOR_A 2
-#define MUX_SELECTOR_B 3
-#define MUX_SELECTOR_C 4
-#define MUX_SELECTOR_D 5
-Multiplexer mux = Multiplexer(MUX_OUTPUT, MUX_SELECTOR_A, MUX_SELECTOR_B, MUX_SELECTOR_C, MUX_SELECTOR_D);
+Multiplexer mux = Multiplexer(
+  ArduinoPin::MuxOutput, 
+  ArduinoPin::MuxSelectorA, 
+  ArduinoPin::MuxSelectorB, 
+  ArduinoPin::MuxSelectorC, 
+  ArduinoPin::MuxSelectorD
+);
 
 TonearmMovementController tonearmController = TonearmMovementController(
   mux,
-  MOTOR_PIN1,
-  MOTOR_PIN2,
-  MOTOR_PIN3,
-  MOTOR_PIN4,
+  ArduinoPin::StepperPin1,
+  ArduinoPin::StepperPin2,
+  ArduinoPin::StepperPin3,
+  ArduinoPin::StepperPin4,
   TonearmMotor,
-  MOTOR_AXIS_SELECTOR,
-  HORIZONTAL_GEARING_SOLENOID,
+  ArduinoPin::MotorAxisSelector,
+  ArduinoPin::HorizontalGearingSolenoid,
   MultiplexerInput::VerticalLowerLimit,
   MultiplexerInput::VerticalUpperLimit
 );
@@ -105,7 +94,6 @@ Adafruit_7segment sevSeg = Adafruit_7segment();
 double lastSevSegValue = 0.0;
 
 // All of these fields are used to calculate the speed that the turntable is spinning.
-#define SPEED_SENSOR A3
 volatile unsigned long currMillisSpeed = millis();
 volatile unsigned long lastMillisSpeed = currMillisSpeed;
 volatile double currSpeed;
@@ -113,11 +101,11 @@ volatile double currSpeed;
 void setup() {
   //Serial.begin(SERIAL_SPEED);
 
-  pinMode(MOVEMENT_STATUS_LED, OUTPUT);
-  pinMode(PAUSE_STATUS_LED, OUTPUT);
+  pinMode(ArduinoPin::MovementStatusLed, OUTPUT);
+  pinMode(ArduinoPin::PauseStatusLed, OUTPUT);
 
-  pinMode(SPEED_SENSOR, INPUT);
-  attachInterrupt(digitalPinToInterrupt(SPEED_SENSOR), calculateTurntableSpeed, RISING);
+  pinMode(ArduinoPin::SpeedSensor, INPUT);
+  attachInterrupt(digitalPinToInterrupt(ArduinoPin::SpeedSensor), calculateTurntableSpeed, RISING);
 
   mux.setDelayMicroseconds(10);
 
@@ -146,13 +134,13 @@ void setup() {
 
   // Begin startup light show
   delay(100);
-  digitalWrite(MOVEMENT_STATUS_LED, HIGH);
+  digitalWrite(ArduinoPin::MovementStatusLed, HIGH);
   delay(100);
-  digitalWrite(PAUSE_STATUS_LED, HIGH);
+  digitalWrite(ArduinoPin::PauseStatusLed, HIGH);
   delay(100);
-  digitalWrite(PAUSE_STATUS_LED, LOW);
+  digitalWrite(ArduinoPin::PauseStatusLed, LOW);
   delay(100);
-  digitalWrite(MOVEMENT_STATUS_LED, LOW);
+  digitalWrite(ArduinoPin::MovementStatusLed, LOW);
   // End startup light show
 
   MovementResult currentMovementStatus = MovementResult::None;
@@ -176,7 +164,7 @@ void setup() {
 void loop() {
   // We always want to make sure the solenoid is not being powered when a command is not executing. There are some bugs that are mostly out of my control
   // that may cause the solenoid to become HIGH, for example, unplugging the USB from the Arduino can sometimes alter the state of the software.
-  digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
+  digitalWrite(ArduinoPin::HorizontalGearingSolenoid, LOW);
 
   monitorCommandButtons();
   monitorSevenSegmentInput();
@@ -318,8 +306,8 @@ void updateSevenSegmentDisplay(double newValue) {
 // This is a multi-movement routine, meaning that multiple tonearm movements are executed. If one of those movements fails, the
 // whole routine is aborted.
 MovementResult playRoutine() {
-  digitalWrite(MOVEMENT_STATUS_LED, HIGH);
-  digitalWrite(PAUSE_STATUS_LED, LOW);
+  digitalWrite(ArduinoPin::MovementStatusLed, HIGH);
+  digitalWrite(ArduinoPin::PauseStatusLed, LOW);
 
   MovementResult result = MovementResult::None;
 
@@ -334,9 +322,9 @@ MovementResult playRoutine() {
   result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, 3);
   if(result != MovementResult::Success) return result;
 
-  digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
+  digitalWrite(ArduinoPin::HorizontalGearingSolenoid, LOW);
 
-  digitalWrite(MOVEMENT_STATUS_LED, LOW);
+  digitalWrite(ArduinoPin::MovementStatusLed, LOW);
   
   return result;
 }
@@ -345,8 +333,8 @@ MovementResult playRoutine() {
 // This is a multi-movement routine, meaning that multiple tonearm movements are executed. If one of those movements fails, the
 // whole routine is aborted.
 MovementResult homeRoutine() {
-  digitalWrite(MOVEMENT_STATUS_LED, HIGH);
-  digitalWrite(PAUSE_STATUS_LED, LOW);
+  digitalWrite(ArduinoPin::MovementStatusLed, HIGH);
+  digitalWrite(ArduinoPin::PauseStatusLed, LOW);
 
   MovementResult result = MovementResult::None;
 
@@ -359,9 +347,9 @@ MovementResult homeRoutine() {
   result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
   if(result != MovementResult::Success) return result;
 
-  digitalWrite(HORIZONTAL_GEARING_SOLENOID, LOW);
+  digitalWrite(ArduinoPin::HorizontalGearingSolenoid, LOW);
 
-  digitalWrite(MOVEMENT_STATUS_LED, LOW);
+  digitalWrite(ArduinoPin::MovementStatusLed, LOW);
 
   return result;
 }
@@ -369,8 +357,8 @@ MovementResult homeRoutine() {
 // This is the pause routine that will lift up the tonearm from the record until the user "unpauses" by pressing the
 // pause button again
 MovementResult pauseOrUnpause() {
-  digitalWrite(MOVEMENT_STATUS_LED, LOW);
-  digitalWrite(PAUSE_STATUS_LED, HIGH);
+  digitalWrite(ArduinoPin::MovementStatusLed, LOW);
+  digitalWrite(ArduinoPin::PauseStatusLed, HIGH);
 
   MovementResult result = MovementResult::None;
 
@@ -393,7 +381,7 @@ MovementResult pauseOrUnpause() {
 
     result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, tonearmSetRpm);
 
-    digitalWrite(PAUSE_STATUS_LED, LOW);
+    digitalWrite(ArduinoPin::PauseStatusLed, LOW);
   }
 
   return result;
@@ -445,9 +433,9 @@ void updateCalibrationEEPROMValues(uint16_t old7In, uint16_t old10In, uint16_t o
 
   // If any values were changed, blink the play LED once to signify that the data was saved
   if(old12In != calibration12Inch || old10In != calibration10Inch || old7In != calibration7Inch) {
-    digitalWrite(MOVEMENT_STATUS_LED, HIGH);
+    digitalWrite(ArduinoPin::MovementStatusLed, HIGH);
     delay(250);
-    digitalWrite(MOVEMENT_STATUS_LED, LOW);
+    digitalWrite(ArduinoPin::MovementStatusLed, LOW);
   }
 }
 
@@ -465,8 +453,8 @@ void calculateTurntableSpeed() {
 // This stops all movement and sets the turntable in an error state to prevent damage.
 // This will be called if a motor stall has been detected.
 void setErrorState(MovementResult movementResult) {
-  digitalWrite(PAUSE_STATUS_LED, HIGH);
-  digitalWrite(MOVEMENT_STATUS_LED, HIGH);
+  digitalWrite(ArduinoPin::PauseStatusLed, HIGH);
+  digitalWrite(ArduinoPin::MovementStatusLed, HIGH);
 
   sevSeg.clear();
   sevSeg.writeDigitNum(0, movementResult, false);
