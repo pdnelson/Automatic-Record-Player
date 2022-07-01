@@ -4,9 +4,11 @@
 #include "arduino.h"
 #include <Stepper.h>
 #include <Multiplexer.h>
+#include <DcMotor.h>
 #include "enums/MotorAxis.h"
 #include "enums/TonearmMovementDirection.h"
 #include "enums/MovementResult.h"
+#include "enums/HorizontalClutchPosition.h"
 
 #ifndef TonearmMovementController_h
 #define TonearmMovementController_h
@@ -23,7 +25,7 @@ class TonearmMovementController {
             uint8_t motorPin4, 
             Stepper tonearmMotors, 
             uint8_t motorSelectPin, 
-            uint8_t horizontalSolenoidPin, 
+            DcMotor horizontalClutch, 
             uint8_t verticalLowerLimit, 
             uint8_t verticalUpperLimit
         );
@@ -48,9 +50,15 @@ class TonearmMovementController {
         // speed - The speed, in RPM, that the motor moving the tonearm should spin.
         void horizontalRelativeMove(int steps, uint8_t speed);
 
+        // Set the value for how long it is expected that the clutch will take to engage or disengage from the horizontal gears.
+        void setClutchEngagementMs(uint16_t ms);
+
     private:        
         // Set all pins that the motor is using to LOW, as well as the motor demultiplexer.
         void releaseCurrentFromMotors();
+
+        // Set the position of the horizontal clutch, while also accounting for the delay and shutting off the motor at the end of the movement.
+        void setClutchPosition(HorizontalClutchPosition position);
 
         // Multiplexer that we are reading all sensor values from
         Multiplexer inputMux;
@@ -73,6 +81,12 @@ class TonearmMovementController {
         // when we want to go to a particular sensor.
         uint8_t verticalLowerLimit;
         uint8_t verticalUpperLimit;
+
+        // This is used to engage and disengage the gears that drive the horizontal movement of the tonearm.
+        DcMotor horizontalClutch;
+
+        // How long it is estimated that the clutch takes to engage or disengage.
+        uint16_t clutchEngagementMs;
 };
 
 #endif

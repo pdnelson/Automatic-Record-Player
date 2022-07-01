@@ -58,8 +58,14 @@ enum ArduinoPin : uint8_t {
     // is currently executing the "pause" routine, or if the tonearm is currently in the "pause" position.
     PauseStatusLed = 13,
 
-    UNUSED_ARDUINO_A0 = A0,
-    UNUSED_ARDUINO_A1 = A1,
+    // Setting this HIGH will cause the the horizontal motor clutch to either engage or disengage. This is used with HorizontalClutchMotorDir2
+    // to drive a DC motor through an H-bridge.
+    HorizontalClutchMotorDir1 = A0,
+
+    // Setting this HIGH will cause the the horizontal motor clutch to either engage or disengage. This is used with HorizontalClutchMotorDir1
+    // to drive a DC motor through an H-bridge.
+    HorizontalClutchMotorDir2 = A1,
+
     UNUSED_ARDUINO_A2 = A2,
 
     // This is used, in combination with an interrupt, to calculate what speed the turntable is currently spinning at.
@@ -74,11 +80,7 @@ enum ArduinoPin : uint8_t {
     Reserved7SegScl = A5,
 
     UNUSED_ARDUINO_A6 = A6,
-
-    // This is used to engage the horizontal gears for movement. This is needed so that the gears aren't engaged
-    // when a record is playing or any other times, otherwise the record would not be able to move the tonearm
-    // very well...
-    HorizontalGearingSolenoid = A7
+    UNUSED_ARDUINO_A7 = A7
 };
 
 #endif

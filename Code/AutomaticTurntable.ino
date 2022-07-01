@@ -1,5 +1,6 @@
 #include <Stepper.h>
 #include <Multiplexer.h>
+#include <DcMotor.h>
 #include "headers/AutomaticTurntable.h"
 #include "enums/ArduinoPin.h"
 #include "enums/MultiplexerInput.h"
@@ -36,6 +37,11 @@ Multiplexer mux = Multiplexer(
   ArduinoPin::MuxSelectorD
 );
 
+DcMotor horizontalClutch = DcMotor(
+  ArduinoPin::HorizontalClutchMotorDir1,
+  ArduinoPin::HorizontalClutchMotorDir2
+);
+
 TonearmMovementController tonearmController = TonearmMovementController(
   mux,
   ArduinoPin::StepperPin1,
@@ -44,7 +50,7 @@ TonearmMovementController tonearmController = TonearmMovementController(
   ArduinoPin::StepperPin4,
   TonearmMotor,
   ArduinoPin::MotorAxisSelector,
-  ArduinoPin::HorizontalGearingSolenoid,
+  horizontalClutch,
   MultiplexerInput::VerticalLowerLimit,
   MultiplexerInput::VerticalUpperLimit
 );
@@ -100,6 +106,8 @@ volatile double currSpeed;
 
 void setup() {
   //Serial.begin(SERIAL_SPEED);
+
+  tonearmController.setClutchEngagementMs(250);
 
   pinMode(ArduinoPin::MovementStatusLed, OUTPUT);
   pinMode(ArduinoPin::PauseStatusLed, OUTPUT);
@@ -162,10 +170,6 @@ void setup() {
 }
 
 void loop() {
-  // We always want to make sure the solenoid is not being powered when a command is not executing. There are some bugs that are mostly out of my control
-  // that may cause the solenoid to become HIGH, for example, unplugging the USB from the Arduino can sometimes alter the state of the software.
-  digitalWrite(ArduinoPin::HorizontalGearingSolenoid, LOW);
-
   monitorCommandButtons();
   monitorSevenSegmentInput();
 }
@@ -322,8 +326,6 @@ MovementResult playRoutine() {
   result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, 3);
   if(result != MovementResult::Success) return result;
 
-  digitalWrite(ArduinoPin::HorizontalGearingSolenoid, LOW);
-
   digitalWrite(ArduinoPin::MovementStatusLed, LOW);
   
   return result;
@@ -346,8 +348,6 @@ MovementResult homeRoutine() {
 
   result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
   if(result != MovementResult::Success) return result;
-
-  digitalWrite(ArduinoPin::HorizontalGearingSolenoid, LOW);
 
   digitalWrite(ArduinoPin::MovementStatusLed, LOW);
 
