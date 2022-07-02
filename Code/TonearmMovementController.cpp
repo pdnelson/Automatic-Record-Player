@@ -19,7 +19,6 @@ TonearmMovementController::TonearmMovementController(
       tonearmMotors(tonearmMotors),
       horizontalClutch(horizontalClutch)
 {
-
     this->motorPin1 = motorPin1;
     this->motorPin2 = motorPin2;
     this->motorPin3 = motorPin3;
@@ -36,20 +35,25 @@ TonearmMovementController::TonearmMovementController(
 
 // Moves the tonearm to a specified destination.
 MovementResult TonearmMovementController::moveTonearmHorizontally(uint8_t destinationSensor, unsigned int timeout, int calibration, uint8_t speed) {
-    this->tonearmMotors.setSpeed(speed);
-    unsigned int movementStepCount = 0;
+    // Select horizontal movement.
     digitalWrite(this->motorSelectPin, MotorAxis::Horizontal);
 
+    // Set values needed for movement.
+    unsigned int movementStepCount = 0;
+    this->tonearmMotors.setSpeed(speed);
     bool currentSensorStatus = this->inputMux.readDigitalValue(destinationSensor); 
+
+    // Determine what direction we're moving.
     TonearmMovementDirection movementDirection = currentSensorStatus ? TonearmMovementDirection::Clockwise : TonearmMovementDirection::Counterclockwise;
 
+    // Engage clutch so gears can move the tonearm.
     this->setClutchPosition(HorizontalClutchPosition::Engage);
 
-    // Keep moving until the sensor is the opposite of what it started at
+    // Keep moving until the sensor is the opposite of what it started at.
     while(this->inputMux.readDigitalValue(destinationSensor) == currentSensorStatus) {
       this->tonearmMotors.step(movementDirection);
 
-      // If the sensor isn't hit in the expected time, the movement failed.
+      // If the sensor isn't hit within the expected number of steps, the movement failed.
       if(movementStepCount++ >= timeout) {
         this->setClutchPosition(HorizontalClutchPosition::Disengage);
 
@@ -61,7 +65,7 @@ MovementResult TonearmMovementController::moveTonearmHorizontally(uint8_t destin
       }
     }
 
-    this->horizontalRelativeMove(calibration, speed); // Move tonearm additional steps to account for calibration set by rear potentiometers
+    this->horizontalRelativeMove(calibration, speed); // Move tonearm additional steps to account for calibration set by rear potentiometers.
 
     this->releaseCurrentFromMotors();
     this->setClutchPosition(HorizontalClutchPosition::Disengage);
@@ -70,11 +74,17 @@ MovementResult TonearmMovementController::moveTonearmHorizontally(uint8_t destin
 }
 
 MovementResult TonearmMovementController::moveTonearmVertically(uint8_t destinationSensor, unsigned int timeout, uint8_t speed) {
-
-  TonearmMovementDirection movementDirection = TonearmMovementDirection::NoDirection;
-
   // Only perform the operation if the tonearm is not already at its destination.
   if(!this->inputMux.readDigitalValue(destinationSensor)) {
+    // Select vertical movement.
+    digitalWrite(this->motorSelectPin, MotorAxis::Vertical);
+
+    // Set values needed for movement.
+    unsigned int movementStepCount = 0;
+    this->tonearmMotors.setSpeed(speed);
+
+    // Determine what direction we're moving.
+    TonearmMovementDirection movementDirection = TonearmMovementDirection::NoDirection;
     if(destinationSensor == this->verticalLowerLimit) {
       movementDirection = TonearmMovementDirection::Down; // Must move down to reach the lower limit.
     }
@@ -82,15 +92,11 @@ MovementResult TonearmMovementController::moveTonearmVertically(uint8_t destinat
       movementDirection = TonearmMovementDirection::Up; // Must move up to reach the upper limit.
     }
 
-    this->tonearmMotors.setSpeed(speed);
-    unsigned int movementStepCount = 0;
-    digitalWrite(this->motorSelectPin, MotorAxis::Vertical);
-
-    // Move the vertical axis until it reaches its destination
+    // Move the vertical axis until it reaches its destination.
     while(!this->inputMux.readDigitalValue(destinationSensor)) {
       this->tonearmMotors.step(movementDirection);
 
-      // Timeout so that if the motor gets stuck, it does not get damaged.
+      // If the limit isn't hit within the expected number of steps, the movement failed.
       if(movementStepCount++ >= timeout) {
         this->releaseCurrentFromMotors();
         if(movementDirection == TonearmMovementDirection::Up)
@@ -107,15 +113,22 @@ MovementResult TonearmMovementController::moveTonearmVertically(uint8_t destinat
   return MovementResult::Success;
 }
 
+// This method assumes that the horizontal clutch has already been engaged.
 void TonearmMovementController::horizontalRelativeMove(int steps, uint8_t speed) {
-  unsigned int movementStepCount = 0;
-
+  // Select horizontal movement.
   digitalWrite(this->motorSelectPin, MotorAxis::Horizontal);
+
+  // Set values needed for movement.
+  unsigned int movementStepCount = 0;
   this->tonearmMotors.setSpeed(speed);
 
+  // Determine what direction we're moving.
   TonearmMovementDirection movementDirection = (steps > 0) ? TonearmMovementDirection::Clockwise : TonearmMovementDirection::Counterclockwise;
+
+  // Set steps to the absolute, so that we only have to increment the step count in the while loop below.
   steps = abs(steps);
 
+  // Move the tonearm by the number of steps passed as an argument.
   while(movementStepCount++ < steps) {
     this->tonearmMotors.step(movementDirection);
   }
