@@ -19,6 +19,7 @@
     /* Status/settings */
     uint16_t getActiveSensorCalibration();
     RecordSize getActiveRecordSize();
+    void loadCalibrationEEPROMValues(bool loadDefaults);
     void updateCalibrationEEPROMValues(uint16_t old7In, uint16_t old10In, uint16_t old12In);
 
     /* Turntable speed */

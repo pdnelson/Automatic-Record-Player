@@ -1,7 +1,8 @@
 #include <Stepper.h>
 #include <Multiplexer.h>
 #include <DcMotor.h>
-#include "headers/AutomaticTurntable.h"
+#include "proto/AutomaticTurntable.h"
+#include "proto/Constants.h"
 #include "enums/ArduinoPin.h"
 #include "enums/MultiplexerInput.h"
 #include "enums/MovementResult.h"
@@ -17,11 +18,9 @@
 // Used for calibration storage
 #include <EEPROM.h>
 
-//#define SERIAL_SPEED 115200
-
-#define STEPS_PER_REVOLUTION 2048
-
-Stepper TonearmMotor = Stepper(
+// Though this is one stepper motor declaration, this object actually handles both the vertical and horizontal
+// stepper motors. Which one is currently active is determined by the ArduinoPin::MotorAxisSelector.
+Stepper tonearmMotor = Stepper(
   STEPS_PER_REVOLUTION, 
   ArduinoPin::StepperPin4,
   ArduinoPin::StepperPin2, 
@@ -29,6 +28,7 @@ Stepper TonearmMotor = Stepper(
   ArduinoPin::StepperPin1
 );
 
+// The multiplexer monitors most input values that we read to determine the statuses of various sensors.
 Multiplexer mux = Multiplexer(
   ArduinoPin::MuxOutput, 
   ArduinoPin::MuxSelectorA, 
@@ -37,58 +37,26 @@ Multiplexer mux = Multiplexer(
   ArduinoPin::MuxSelectorD
 );
 
+// The tonearmClutch allows us to engage or disengage the horizontal gearing to either allow for automatic
+// movement (engaged), or manual movement (disengaged).
 DcMotor horizontalClutch = DcMotor(
   ArduinoPin::HorizontalClutchMotorDir1,
   ArduinoPin::HorizontalClutchMotorDir2
 );
 
+// The tonearmController is in charge of automatically moving the tonearm vertically or horizontally.
 TonearmMovementController tonearmController = TonearmMovementController(
   mux,
   ArduinoPin::StepperPin1,
   ArduinoPin::StepperPin2,
   ArduinoPin::StepperPin3,
   ArduinoPin::StepperPin4,
-  TonearmMotor,
+  tonearmMotor,
   ArduinoPin::MotorAxisSelector,
   horizontalClutch,
   MultiplexerInput::VerticalLowerLimit,
   MultiplexerInput::VerticalUpperLimit
 );
-
-// The motors used in this project are 28BYJ-48 stepper motors, which I've found to cap at 11 RPM 
-// before becoming too unreliable. 8 or 9 I've found to be a good balance for speed and reliability at 5v DC.
-#define DEFAULT_MOVEMENT_RPM 10
-
-// These are calibration values used to position the tonearm approximately where it needs to go. These values are finished off
-// by adding the potentiometer values.
-#define STEPS_FROM_PLAY_SENSOR_HOME -1025
-
-// These are calibration values set by the user to tell the tonearm how many steps to go past the "home" reference optical
-// sensor.
-uint16_t calibration7Inch = 0;
-uint16_t calibration10Inch = 0;
-uint16_t calibration12Inch = 0;
-
-// These are the values that determine how slow/fast that each calibration value may increment/decrement when holding a button
-#define CALIBRATION_HOLD_CHANGE_MS 200 // The interval between value updates
-#define CALIBRATION_HOLD_DECREMENT_MS 20 // The number of MS removed from the overall change MS when the hold change interval is reached
-#define CALIBRATION_HOLD_LOWEST_MS 20 // The lowest number that the hold change MS can go to before not being subtracted from anymore.
-#define CALIBRATION_HOLD_CHANGE_INTERVAL 3 // The number of updates before the change MS decreases
-#define CALIBRATION_DEBOUNCE_MS 100
-
-#define CALIBRATION_7IN_EEPROM_START_ADDRESS 0
-#define CALIBRATION_10IN_EEPROM_START_ADDRESS 2
-#define CALIBRATION_12IN_EEPROM_START_ADDRESS 4
-
-#define CALIBRATION_7IN_DEFAULT 7
-#define CALIBRATION_10IN_DEFAULT 10
-#define CALIBRATION_12IN_DEFAULT 12
-
-// These are timeouts used for error checking, so the hardware doesn't damage itself.
-// Essentially, if the steps exceed this number and the motor has not yet reached its
-// destination, an error has occurred.
-#define VERTICAL_MOVEMENT_TIMEOUT_STEPS 1000
-#define HORIZONTAL_MOVEMENT_TIMEOUT_STEPS 3000
 
 // The 7-segment display is used for the following:
 // - Displaying the speed that the turntable is spinning.
@@ -96,7 +64,13 @@ uint16_t calibration12Inch = 0;
 // - Error codes if a movement fails.
 Adafruit_7segment sevSeg = Adafruit_7segment();
 
-// These fields are so we aren't writing to the 7-segment display so often
+// These are calibration values set by the user to tell the tonearm how many steps to go past the "home" reference optical
+// sensor.
+uint16_t calibration7Inch = 0;
+uint16_t calibration10Inch = 0;
+uint16_t calibration12Inch = 0;
+
+// The last value that was written to the 7-segment display. This is used so that we don't write the same value to it.
 double lastSevSegValue = 0.0;
 
 // All of these fields are used to calculate the speed that the turntable is spinning.
@@ -104,41 +78,25 @@ volatile unsigned long currMillisSpeed = millis();
 volatile unsigned long lastMillisSpeed = currMillisSpeed;
 volatile double currSpeed;
 
-void setup() {
-  //Serial.begin(SERIAL_SPEED);
-
-  tonearmController.setClutchEngagementMs(250);
-
+void setup() { //Serial.begin(SERIAL_SPEED);
+  // Set pins
   pinMode(ArduinoPin::MovementStatusLed, OUTPUT);
   pinMode(ArduinoPin::PauseStatusLed, OUTPUT);
-
   pinMode(ArduinoPin::SpeedSensor, INPUT);
   attachInterrupt(digitalPinToInterrupt(ArduinoPin::SpeedSensor), calculateTurntableSpeed, RISING);
 
-  mux.setDelayMicroseconds(10);
+  // Set calibration values
+  tonearmController.setClutchEngagementMs(CLUTCH_ENGAGEMENT_MS);
+  mux.setDelayMicroseconds(MULTIPLEXER_DELAY_MICROS);
 
-  sevSeg.begin(0x70);
+  // Start up seven-segment display
+  sevSeg.begin(SEV_SEG_START_ADDRESS);
   sevSeg.print(0.0);
   sevSeg.writeDisplay();
 
-  // If the calibration button is being held, set calibration values to their defaults (but don't save them to the EEPROM)
-  // This mode is used so that the user can see if the 3-way switch is positioned correctly (with 7in pointing down, and 12in pointing up)
-  if(mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue)) {
-    calibration7Inch = CALIBRATION_7IN_DEFAULT;
-    calibration10Inch = CALIBRATION_10IN_DEFAULT;
-    calibration12Inch = CALIBRATION_12IN_DEFAULT;
-  }
-  else {
-    // Load calibration values from EEPROM
-    calibration7Inch = (EEPROM.read(CALIBRATION_7IN_EEPROM_START_ADDRESS) << 8) + EEPROM.read(CALIBRATION_7IN_EEPROM_START_ADDRESS + 1);
-    calibration10Inch = (EEPROM.read(CALIBRATION_10IN_EEPROM_START_ADDRESS) << 8) + EEPROM.read(CALIBRATION_10IN_EEPROM_START_ADDRESS + 1);
-    calibration12Inch = (EEPROM.read(CALIBRATION_12IN_EEPROM_START_ADDRESS) << 8) + EEPROM.read(CALIBRATION_12IN_EEPROM_START_ADDRESS + 1);
-
-    // Validate that calibration values are within the accepted range
-    if(calibration7Inch > 2500) calibration7Inch = 0;
-    if(calibration10Inch > 2500) calibration10Inch = 0;
-    if(calibration12Inch > 2500) calibration12Inch = 0;
-  }
+  // Load calibration values from the EEPROM.
+  // If the calibration button is being held, default values will be set instead of loading from the EEPROM.
+  loadCalibrationEEPROMValues(mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue));
 
   // Begin startup light show
   delay(100);
@@ -151,6 +109,7 @@ void setup() {
   digitalWrite(ArduinoPin::MovementStatusLed, LOW);
   // End startup light show
 
+  // Check sensors, and perform an initial movement if necessary.
   MovementResult currentMovementStatus = MovementResult::None;
 
   // If the turntable is turned on to "automatic," then home the whole tonearm if it is not already home.
@@ -164,6 +123,7 @@ void setup() {
       currentMovementStatus = pauseOrUnpause();
   }
 
+  // If the movement was anything other than success/none, then it failed, and we must set the error state.
   if(currentMovementStatus != MovementResult::Success && currentMovementStatus != MovementResult::None) {
     setErrorState(currentMovementStatus);
   }
@@ -194,6 +154,7 @@ void monitorCommandButtons() {
       currentMovementStatus = homeRoutine();
   }
 
+  // If the movement was anything other than success/none, then it failed, and we must set the error state.
   if(currentMovementStatus != MovementResult::Success && currentMovementStatus != MovementResult::None) {
     setErrorState(currentMovementStatus);
   }
@@ -254,7 +215,7 @@ void calibrationSettingLoop() {
     buttonDelay = currButtonPressMs - lastButtonPressMsDelay > calibrationHoldChangeInterval;
     buttonDebounce = currButtonPressMs - lastButtonPressMsDebounce > calibrationDebounceInterval;
 
-    if(mux.readDigitalValue(MultiplexerInput::PauseButton) && calibrationDisplayValue < 1499 && buttonDelay && buttonDebounce) {
+    if(mux.readDigitalValue(MultiplexerInput::PauseButton) && calibrationDisplayValue < (CALIBRATION_VALUE_MAX - 1) && buttonDelay && buttonDebounce) {
       switch(getActiveRecordSize()) {
         case RecordSize::Rec7Inch: calibrationDisplayValue = calibration7Inch++; break;
         case RecordSize::Rec10Inch: calibrationDisplayValue = calibration10Inch++; break;
@@ -411,6 +372,26 @@ RecordSize getActiveRecordSize() {
 
   // If NEITHER RecordSizeSelectors are HIGH, we are using the 10" sensor
   else return RecordSize::Rec10Inch;
+}
+
+void loadCalibrationEEPROMValues(bool loadDefaults) {
+  // This mode is used so that the user can see if the 3-way switch is positioned correctly (with 7in pointing down, and 12in pointing up)
+  if(loadDefaults) {
+    calibration7Inch = CALIBRATION_7IN_DEFAULT;
+    calibration10Inch = CALIBRATION_10IN_DEFAULT;
+    calibration12Inch = CALIBRATION_12IN_DEFAULT;
+  }
+  else {
+    // Load calibration values from EEPROM
+    calibration7Inch = (EEPROM.read(CALIBRATION_7IN_EEPROM_START_ADDRESS) << 8) + EEPROM.read(CALIBRATION_7IN_EEPROM_START_ADDRESS + 1);
+    calibration10Inch = (EEPROM.read(CALIBRATION_10IN_EEPROM_START_ADDRESS) << 8) + EEPROM.read(CALIBRATION_10IN_EEPROM_START_ADDRESS + 1);
+    calibration12Inch = (EEPROM.read(CALIBRATION_12IN_EEPROM_START_ADDRESS) << 8) + EEPROM.read(CALIBRATION_12IN_EEPROM_START_ADDRESS + 1);
+
+    // Validate that calibration values are within the accepted range
+    if(calibration7Inch > CALIBRATION_VALUE_MAX) calibration7Inch = 0;
+    if(calibration10Inch > CALIBRATION_VALUE_MAX) calibration10Inch = 0;
+    if(calibration12Inch > CALIBRATION_VALUE_MAX) calibration12Inch = 0;
+  }
 }
 
 // This will update all numbers that have changed
