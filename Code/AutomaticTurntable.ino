@@ -114,7 +114,7 @@ void setup() { //Serial.begin(SERIAL_SPEED);
 
   // If the turntable is turned on to "automatic," then home the whole tonearm if it is not already home.
   if(mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) == AutoManualSwitchPosition::Automatic && 
-    !mux.readDigitalValue(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor)) {
+    mux.readDigitalValue(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor)) {
     MovementResult currentMovementStatus = homeRoutine();
   }
 
@@ -148,7 +148,7 @@ void monitorCommandButtons() {
 
     // If the tonearm is past the location of the home sensor, then this button will home it. Otherwise, it will execute
     // the play routine.
-    if(mux.readDigitalValue(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor)) 
+    if(!mux.readDigitalValue(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor)) 
       currentMovementStatus = playRoutine();
     else 
       currentMovementStatus = homeRoutine();
@@ -333,7 +333,7 @@ MovementResult pauseOrUnpause() {
     uint8_t tonearmSetRpm = 0;
 
     // If the tonearm is hovering over home position, then just go down at default speed
-    if(mux.readDigitalValue(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor)) {
+    if(!mux.readDigitalValue(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor)) {
       tonearmSetRpm = DEFAULT_MOVEMENT_RPM;
     }
 
