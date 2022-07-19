@@ -98,6 +98,10 @@ void setup() { //Serial.begin(SERIAL_SPEED);
   // If the calibration button is being held, default values will be set instead of loading from the EEPROM.
   loadCalibrationEEPROMValues(mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue));
 
+  // Disengage the horizontal clutch because the turntable may have been turned off unexpectedly in the
+  // middle of a movement.
+  horizontalClutch.immediateStart(HorizontalClutchPosition::Disengage);
+
   // Begin startup light show
   delay(100);
   digitalWrite(ArduinoPin::MovementStatusLed, HIGH);
@@ -127,6 +131,9 @@ void setup() { //Serial.begin(SERIAL_SPEED);
   if(currentMovementStatus != MovementResult::Success && currentMovementStatus != MovementResult::None) {
     setErrorState(currentMovementStatus);
   }
+
+  // The horizontal clutch should be disengaged by this point...hopefully.
+  horizontalClutch.immediateStop();
 }
 
 void loop() {
@@ -440,6 +447,8 @@ void setErrorState(MovementResult movementResult) {
   sevSeg.clear();
   sevSeg.writeDigitNum(0, movementResult, false);
   sevSeg.writeDisplay();
+
+  tonearmController.setClutchPosition(HorizontalClutchPosition::Disengage);
 
   // Wait for the user to press the Play/Home or Pause/Unpause buttons to break out of the error state
   while(!mux.readDigitalValue(MultiplexerInput::PlayHomeButton) && !mux.readDigitalValue(MultiplexerInput::PauseButton)) { delay(1); }

@@ -53,12 +53,12 @@ class TonearmMovementController {
         // Set the value for how long it is expected that the clutch will take to engage or disengage from the horizontal gears.
         void setClutchEngagementMs(uint16_t ms);
 
+        // Set the position of the horizontal clutch, while also accounting for the delay and shutting off the motor at the end of the movement.
+        void setClutchPosition(HorizontalClutchPosition position);
+
     private:        
         // Set all pins that the motor is using to LOW, as well as the motor demultiplexer.
         void releaseCurrentFromMotors();
-
-        // Set the position of the horizontal clutch, while also accounting for the delay and shutting off the motor at the end of the movement.
-        void setClutchPosition(HorizontalClutchPosition position);
 
         // Multiplexer that we are reading all sensor values from
         Multiplexer inputMux;
