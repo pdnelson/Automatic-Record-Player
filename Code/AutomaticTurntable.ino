@@ -98,9 +98,8 @@ void setup() { //Serial.begin(SERIAL_SPEED);
   // If the calibration button is being held, default values will be set instead of loading from the EEPROM.
   loadCalibrationEEPROMValues(mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue));
 
-  // Disengage the horizontal clutch because the turntable may have been turned off unexpectedly in the
-  // middle of a movement.
-  horizontalClutch.immediateStart(HorizontalClutchPosition::Disengage);
+  // Engage the horizontal clutch. This will be setting it to the "starting" point for where we know it is engaged
+  horizontalClutch.immediateStart(HorizontalClutchPosition::Engage);
 
   // Begin startup light show
   delay(100);
@@ -116,10 +115,13 @@ void setup() { //Serial.begin(SERIAL_SPEED);
   // Check sensors, and perform an initial movement if necessary.
   MovementResult currentMovementStatus = MovementResult::None;
 
+  bool homeExecuted = false;
+
   // If the turntable is turned on to "automatic," then home the whole tonearm if it is not already home.
   if(mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) == AutoManualSwitchPosition::Automatic && 
     mux.readDigitalValue(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor)) {
     MovementResult currentMovementStatus = homeRoutine();
+    homeExecuted = true;
   }
 
   // Otherwise, we only want to home the vertical axis if it is not already homed, which will drop the tonearm in its current location.
@@ -132,8 +134,11 @@ void setup() { //Serial.begin(SERIAL_SPEED);
     setErrorState(currentMovementStatus);
   }
 
-  // The horizontal clutch should be disengaged by this point...hopefully.
-  horizontalClutch.immediateStop();
+  // If the homing routine was not executed, then the horizontal clutch is still engaged, and we need to disengage it
+  if(!homeExecuted) {
+    delay(500); // Wait 500ms so the clutch can home the whole way before we disengage it
+    tonearmController.setClutchPosition(HorizontalClutchPosition::Disengage);
+  }
 }
 
 void loop() {

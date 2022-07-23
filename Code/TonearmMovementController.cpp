@@ -142,7 +142,15 @@ void TonearmMovementController::releaseCurrentFromMotors() {
 
 void TonearmMovementController::setClutchPosition(HorizontalClutchPosition position) {
     this->horizontalClutch.immediateStart(position);
-    delay(this->clutchEngagementMs); // Must allow time for the clutch to engage
+
+    if(position == HorizontalClutchPosition::Disengage) {
+      delay(this->clutchEngagementMs);
+    }
+    else {
+      // Give the clutch additional time to engage because it may not always land in the same spot when disengaging for x ms
+      delay(this->clutchEngagementMs + (this->clutchEngagementMs / 2));
+    }
+    
     this->horizontalClutch.immediateStop();
 }
 
