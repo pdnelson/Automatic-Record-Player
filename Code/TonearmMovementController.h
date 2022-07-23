@@ -48,7 +48,7 @@ class TonearmMovementController {
         // steps. This is only intended to be used for calibration offsets, and moving a few steps to unlock gears.
         // steps - The number of steps the tonearm should move.
         // speed - The speed, in RPM, that the motor moving the tonearm should spin.
-        void horizontalRelativeMove(int steps, uint8_t speed);
+        void horizontalRelativeMove(uint16_t steps, uint8_t speed, TonearmMovementDirection direction);
 
         // Set the value for how long it is expected that the clutch will take to engage or disengage from the horizontal gears.
         void setClutchEngagementMs(uint16_t ms);

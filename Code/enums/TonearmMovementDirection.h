@@ -11,10 +11,10 @@ enum TonearmMovementDirection : int8_t {
     Counterclockwise = 1,
 
     // The tonearm is moving up vertically.
-    Up = 1,
+    Up = -1,
 
     // The tonearm is moving down vertically.
-    Down = -1,
+    Down = 1,
 
     // The value has not been set yet.
     NoDirection = 0

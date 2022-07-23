@@ -149,9 +149,14 @@ void monitorCommandButtons() {
     currentMovementStatus = pauseOrUnpause();
   }
   
+  // If the play/home button is pressed, the command executes
+  // The command also executes when the horizontal pickup sensor is set high at the same time as the home sensor, 
+  // only if the auto/manual switch is set to automatic.
   else if(mux.readDigitalValue(MultiplexerInput::PlayHomeButton) ||
-   (!mux.readDigitalValue(MultiplexerInput::HorizontalPickupOpticalSensor) && 
-     mux.readDigitalValue(MultiplexerInput::AutoManualSwitch))) {
+   (mux.readDigitalValue(MultiplexerInput::HorizontalPickupOpticalSensor) && 
+    mux.readDigitalValue(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor) && 
+    mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) == AutoManualSwitchPosition::Automatic)
+    ) {
 
     // If the tonearm is past the location of the home sensor, then this button will home it. Otherwise, it will execute
     // the play routine.

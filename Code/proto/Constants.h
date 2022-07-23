@@ -20,15 +20,15 @@
 
     // The approximate number of steps between the play sensor, and the homing mount. This value is only used to move
     // the tonearm counterclockwise, so it accounts for some extra steps to push the tonearm into the mount.
-    #define STEPS_FROM_PLAY_SENSOR_HOME -1025
+    #define STEPS_FROM_PLAY_SENSOR_HOME 1025
 
     // These are timeouts used for error checking, so the hardware doesn't damage itself.
     // Essentially, if the steps exceed this number and the motor has not yet reached its
     // destination, an error has occurred.
-    #define VERTICAL_MOVEMENT_TIMEOUT_STEPS 1000
+    #define VERTICAL_MOVEMENT_TIMEOUT_STEPS 1500
     #define HORIZONTAL_MOVEMENT_TIMEOUT_STEPS 3000
 
-    #define CLUTCH_ENGAGEMENT_MS 500
+    #define CLUTCH_ENGAGEMENT_MS 1000
 
     #define MULTIPLEXER_DELAY_MICROS 10
 

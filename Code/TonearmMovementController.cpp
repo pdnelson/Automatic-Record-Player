@@ -65,7 +65,7 @@ MovementResult TonearmMovementController::moveTonearmHorizontally(uint8_t destin
       }
     }
 
-    this->horizontalRelativeMove(calibration, speed); // Move tonearm additional steps to account for calibration set by rear potentiometers.
+    this->horizontalRelativeMove(calibration, speed, movementDirection); // Move tonearm additional steps to account for calibration set by rear potentiometers.
 
     this->releaseCurrentFromMotors();
     this->setClutchPosition(HorizontalClutchPosition::Disengage);
@@ -114,7 +114,7 @@ MovementResult TonearmMovementController::moveTonearmVertically(uint8_t destinat
 }
 
 // This method assumes that the horizontal clutch has already been engaged.
-void TonearmMovementController::horizontalRelativeMove(int steps, uint8_t speed) {
+void TonearmMovementController::horizontalRelativeMove(uint16_t steps, uint8_t speed, TonearmMovementDirection direction) {
   // Select horizontal movement.
   digitalWrite(this->motorSelectPin, MotorAxis::Horizontal);
 
@@ -122,15 +122,9 @@ void TonearmMovementController::horizontalRelativeMove(int steps, uint8_t speed)
   unsigned int movementStepCount = 0;
   this->tonearmMotors.setSpeed(speed);
 
-  // Determine what direction we're moving.
-  TonearmMovementDirection movementDirection = (steps > 0) ? TonearmMovementDirection::Clockwise : TonearmMovementDirection::Counterclockwise;
-
-  // Set steps to the absolute, so that we only have to increment the step count in the while loop below.
-  steps = abs(steps);
-
   // Move the tonearm by the number of steps passed as an argument.
   while(movementStepCount++ < steps) {
-    this->tonearmMotors.step(movementDirection);
+    this->tonearmMotors.step(direction);
   }
 
   this->releaseCurrentFromMotors();
