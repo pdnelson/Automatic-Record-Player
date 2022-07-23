@@ -1,0 +1,338 @@
+solid cable-management-thing
+facet normal 0.0 0.0 -1.0
+outer loop
+vertex 10.0 8.0 0.0
+vertex 0.0 0.0 0.0
+vertex 0.0 8.0 0.0
+endloop
+endfacet
+facet normal 0.0 0.0 -1.0
+outer loop
+vertex 0.0 0.0 0.0
+vertex 10.0 8.0 0.0
+vertex 10.0 0.0 0.0
+endloop
+endfacet
+facet normal -1.0 0.0 0.0
+outer loop
+vertex 0.0 5.0 5.0
+vertex 0.0 3.0 1.0
+vertex 0.0 3.0 5.0
+endloop
+endfacet
+facet normal -1.0 0.0 0.0
+outer loop
+vertex 0.0 3.0 1.0
+vertex 0.0 0.0 0.0
+vertex 0.0 0.0 1.0
+endloop
+endfacet
+facet normal -1.0 0.0 0.0
+outer loop
+vertex 0.0 0.0 0.0
+vertex 0.0 3.0 1.0
+vertex 0.0 8.0 0.0
+endloop
+endfacet
+facet normal -1.0 0.0 0.0
+outer loop
+vertex 0.0 8.0 0.0
+vertex 0.0 3.0 1.0
+vertex 0.0 5.0 1.0
+endloop
+endfacet
+facet normal -1.0 0.0 0.0
+outer loop
+vertex 0.0 5.0 1.0
+vertex 0.0 3.0 1.0
+vertex 0.0 5.0 5.0
+endloop
+endfacet
+facet normal -1.0 0.0 0.0
+outer loop
+vertex 0.0 8.0 0.0
+vertex 0.0 5.0 1.0
+vertex 0.0 8.0 1.0
+endloop
+endfacet
+facet normal -0.0 1.0 0.0
+outer loop
+vertex 0.0 8.0 1.0
+vertex 10.0 8.0 0.0
+vertex 0.0 8.0 0.0
+endloop
+endfacet
+facet normal -0.0 1.0 0.0
+outer loop
+vertex 10.0 8.0 0.0
+vertex 0.0 8.0 1.0
+vertex 10.0 8.0 1.0
+endloop
+endfacet
+facet normal 1.0 0.0 0.0
+outer loop
+vertex 10.0 8.0 0.0
+vertex 10.0 0.0 1.0
+vertex 10.0 0.0 0.0
+endloop
+endfacet
+facet normal 1.0 0.0 0.0
+outer loop
+vertex 10.0 0.0 1.0
+vertex 10.0 8.0 0.0
+vertex 10.0 3.0 1.0
+endloop
+endfacet
+facet normal 1.0 0.0 0.0
+outer loop
+vertex 10.0 3.0 1.0
+vertex 10.0 8.0 0.0
+vertex 10.0 5.0 1.0
+endloop
+endfacet
+facet normal 1.0 0.0 0.0
+outer loop
+vertex 10.0 3.0 1.0
+vertex 10.0 5.0 1.0
+vertex 10.0 3.0 5.0
+endloop
+endfacet
+facet normal 1.0 0.0 0.0
+outer loop
+vertex 10.0 5.0 1.0
+vertex 10.0 8.0 0.0
+vertex 10.0 8.0 1.0
+endloop
+endfacet
+facet normal 1.0 0.0 0.0
+outer loop
+vertex 10.0 5.0 5.0
+vertex 10.0 3.0 5.0
+vertex 10.0 5.0 1.0
+endloop
+endfacet
+facet normal -0.0 -1.0 -0.0
+outer loop
+vertex 10.0 0.0 1.0
+vertex 0.0 0.0 0.0
+vertex 10.0 0.0 0.0
+endloop
+endfacet
+facet normal -0.0 -1.0 -0.0
+outer loop
+vertex 0.0 0.0 0.0
+vertex 10.0 0.0 1.0
+vertex 0.0 0.0 1.0
+endloop
+endfacet
+facet normal -0.0 -0.0 1.0
+outer loop
+vertex 10.0 0.0 1.0
+vertex 0.0 3.0 1.0
+vertex 0.0 0.0 1.0
+endloop
+endfacet
+facet normal -0.0 -0.0 1.0
+outer loop
+vertex 0.0 3.0 1.0
+vertex 10.0 0.0 1.0
+vertex 2.0 3.0 1.0
+endloop
+endfacet
+facet normal -0.0 -0.0 1.0
+outer loop
+vertex 2.0 3.0 1.0
+vertex 10.0 0.0 1.0
+vertex 2.0 5.0 1.0
+endloop
+endfacet
+facet normal -0.0 -0.0 1.0
+outer loop
+vertex 2.0 5.0 1.0
+vertex 10.0 0.0 1.0
+vertex 8.0 3.0 1.0
+endloop
+endfacet
+facet normal -0.0 -0.0 1.0
+outer loop
+vertex 8.0 3.0 1.0
+vertex 10.0 0.0 1.0
+vertex 10.0 3.0 1.0
+endloop
+endfacet
+facet normal -0.0 -0.0 1.0
+outer loop
+vertex 2.0 5.0 1.0
+vertex 0.0 8.0 1.0
+vertex 0.0 5.0 1.0
+endloop
+endfacet
+facet normal -0.0 -0.0 1.0
+outer loop
+vertex 0.0 8.0 1.0
+vertex 2.0 5.0 1.0
+vertex 10.0 8.0 1.0
+endloop
+endfacet
+facet normal -0.0 -0.0 1.0
+outer loop
+vertex 10.0 8.0 1.0
+vertex 2.0 5.0 1.0
+vertex 8.0 5.0 1.0
+endloop
+endfacet
+facet normal -0.0 -0.0 1.0
+outer loop
+vertex 8.0 5.0 1.0
+vertex 2.0 5.0 1.0
+vertex 8.0 3.0 1.0
+endloop
+endfacet
+facet normal -0.0 -0.0 1.0
+outer loop
+vertex 10.0 8.0 1.0
+vertex 8.0 5.0 1.0
+vertex 10.0 5.0 1.0
+endloop
+endfacet
+facet normal 3.02139265987275e-016 -2.36426411000222e-032 1.0
+outer loop
+vertex 10.0 3.0 5.0
+vertex 0.0 5.0 5.0
+vertex 0.0 3.0 5.0
+endloop
+endfacet
+facet normal 3.02139265987275e-016 -2.36426411000222e-032 1.0
+outer loop
+vertex 0.0 5.0 5.0
+vertex 10.0 3.0 5.0
+vertex 10.0 5.0 5.0
+endloop
+endfacet
+facet normal -0.0 1.0 -0.0
+outer loop
+vertex 0.0 5.0 5.0
+vertex 2.0 5.0 1.0
+vertex 0.0 5.0 1.0
+endloop
+endfacet
+facet normal -0.0 1.0 -0.0
+outer loop
+vertex 2.0 5.0 1.0
+vertex 0.0 5.0 5.0
+vertex 2.0 5.0 3.0
+endloop
+endfacet
+facet normal -0.0 1.0 -0.0
+outer loop
+vertex 2.0 5.0 3.0
+vertex 0.0 5.0 5.0
+vertex 8.0 5.0 3.0
+endloop
+endfacet
+facet normal -0.0 1.0 -0.0
+outer loop
+vertex 8.0 5.0 3.0
+vertex 0.0 5.0 5.0
+vertex 10.0 5.0 5.0
+endloop
+endfacet
+facet normal -0.0 1.0 -0.0
+outer loop
+vertex 8.0 5.0 3.0
+vertex 10.0 5.0 1.0
+vertex 8.0 5.0 1.0
+endloop
+endfacet
+facet normal -0.0 1.0 -0.0
+outer loop
+vertex 10.0 5.0 1.0
+vertex 8.0 5.0 3.0
+vertex 10.0 5.0 5.0
+endloop
+endfacet
+facet normal -1.0 -1.10447374481855e-031 -2.48506592584174e-031
+outer loop
+vertex 8.0 3.0 3.0
+vertex 8.0 5.0 1.0
+vertex 8.0 3.0 1.0
+endloop
+endfacet
+facet normal -1.0 -1.10447374481855e-031 -2.48506592584174e-031
+outer loop
+vertex 8.0 5.0 1.0
+vertex 8.0 3.0 3.0
+vertex 8.0 5.0 3.0
+endloop
+endfacet
+facet normal -6.24494163273804e-017 -1.0 9.42331346116483e-018
+outer loop
+vertex 10.0 3.0 5.0
+vertex 8.0 3.0 1.0
+vertex 10.0 3.0 1.0
+endloop
+endfacet
+facet normal -6.24494163273804e-017 -1.0 9.42331346116483e-018
+outer loop
+vertex 8.0 3.0 1.0
+vertex 10.0 3.0 5.0
+vertex 8.0 3.0 3.0
+endloop
+endfacet
+facet normal -6.24494163273804e-017 -1.0 9.42331346116483e-018
+outer loop
+vertex 8.0 3.0 3.0
+vertex 10.0 3.0 5.0
+vertex 2.0 3.0 3.0
+endloop
+endfacet
+facet normal -6.24494163273804e-017 -1.0 9.42331346116483e-018
+outer loop
+vertex 2.0 3.0 3.0
+vertex 0.0 3.0 1.0
+vertex 2.0 3.0 1.0
+endloop
+endfacet
+facet normal -6.24494163273804e-017 -1.0 9.42331346116483e-018
+outer loop
+vertex 0.0 3.0 1.0
+vertex 2.0 3.0 3.0
+vertex 0.0 3.0 5.0
+endloop
+endfacet
+facet normal -6.24494163273804e-017 -1.0 9.42331346116483e-018
+outer loop
+vertex 0.0 3.0 5.0
+vertex 2.0 3.0 3.0
+vertex 10.0 3.0 5.0
+endloop
+endfacet
+facet normal 1.0 -0.0 -0.0
+outer loop
+vertex 2.0 5.0 1.0
+vertex 2.0 3.0 3.0
+vertex 2.0 3.0 1.0
+endloop
+endfacet
+facet normal 1.0 -0.0 -0.0
+outer loop
+vertex 2.0 3.0 3.0
+vertex 2.0 5.0 1.0
+vertex 2.0 5.0 3.0
+endloop
+endfacet
+facet normal 0.0 0.0 -1.0
+outer loop
+vertex 8.0 5.0 3.0
+vertex 2.0 3.0 3.0
+vertex 2.0 5.0 3.0
+endloop
+endfacet
+facet normal 0.0 0.0 -1.0
+outer loop
+vertex 2.0 3.0 3.0
+vertex 8.0 5.0 3.0
+vertex 8.0 3.0 3.0
+endloop
+endfacet
+endsolid cable-management-thing
