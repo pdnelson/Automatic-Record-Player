@@ -42,11 +42,7 @@ enum MultiplexerInput : uint8_t {
     // S10
     RecordSizeSelector2 = 9,
 
-    // The "pickup" position optical sensor, which indicates the location the tonearm must be at in order for the homing routine to be executed.
-    // Ideally, this would be at the inner deadwax of the record.
-    // S11
-    HorizontalPickupOpticalSensor = 10,
-
+    UNUSED_MUX_S11 = 10,
     UNUSED_MUX_S12 = 11,
     UNUSED_MUX_S13 = 12,
 

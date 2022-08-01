@@ -156,11 +156,8 @@ void monitorCommandButtons() {
   }
   
   // If the play/home button is pressed, the command executes
-  // The command also executes when the horizontal pickup sensor is set high at the same time as the home sensor, 
-  // only if the auto/manual switch is set to automatic.
   else if(mux.readDigitalValue(MultiplexerInput::PlayHomeButton) ||
-   (mux.readDigitalValue(MultiplexerInput::HorizontalPickupOpticalSensor) && 
-    mux.readDigitalValue(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor) && 
+   (mux.readDigitalValue(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor) && 
     mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) == AutoManualSwitchPosition::Automatic)
     ) {
 
