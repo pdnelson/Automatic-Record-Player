@@ -87,6 +87,7 @@ void setup() { //Serial.begin(SERIAL_SPEED);
 
   // Set calibration values
   tonearmController.setClutchEngagementMs(CLUTCH_ENGAGEMENT_MS);
+  tonearmController.setTopMotorSpeed(MOVEMENT_RPM_TOP_SPEED);
   mux.setDelayMicroseconds(MULTIPLEXER_DELAY_MICROS);
 
   // Start up seven-segment display
@@ -295,10 +296,10 @@ MovementResult playRoutine() {
 
   int calibration = getActiveSensorCalibration();
 
-  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, MOVEMENT_RPM_DEFAULT);
   if(result != MovementResult::Success) return result;
 
-  result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, calibration, DEFAULT_MOVEMENT_RPM);
+  result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, calibration, MOVEMENT_RPM_SENSOR_SEEK);
   if(result != MovementResult::Success) return result;
 
   result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, 3);
@@ -318,13 +319,13 @@ MovementResult homeRoutine() {
 
   MovementResult result = MovementResult::None;
 
-  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, MOVEMENT_RPM_DEFAULT);
   if(result != MovementResult::Success) return result;
 
-  result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, STEPS_FROM_PLAY_SENSOR_HOME, DEFAULT_MOVEMENT_RPM);
+  result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, STEPS_FROM_PLAY_SENSOR_HOME, MOVEMENT_RPM_TOP_SPEED);
   if(result != MovementResult::Success) return result;
 
-  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, MOVEMENT_RPM_DEFAULT);
   if(result != MovementResult::Success) return result;
 
   digitalWrite(ArduinoPin::MovementStatusLed, LOW);
@@ -342,7 +343,7 @@ MovementResult pauseOrUnpause() {
 
   // If the vertical lower limit is pressed (i.e., the tonearm is vertically homed), then move it up
   if(mux.readDigitalValue(MultiplexerInput::VerticalLowerLimit)) {
-    result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, DEFAULT_MOVEMENT_RPM);
+    result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, MOVEMENT_RPM_DEFAULT);
   }
 
   // Otherwise, just move it down and then shut off the LED
@@ -351,11 +352,11 @@ MovementResult pauseOrUnpause() {
 
     // If the tonearm is hovering over home position, then just go down at default speed
     if(!mux.readDigitalValue(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor)) {
-      tonearmSetRpm = DEFAULT_MOVEMENT_RPM;
+      tonearmSetRpm = MOVEMENT_RPM_DEFAULT;
     }
 
     // Otherwise, set it down carefully
-    else tonearmSetRpm = 3;
+    else tonearmSetRpm = MOVEMENT_RPM_CAREFUL;
 
     result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, tonearmSetRpm);
 
@@ -457,8 +458,6 @@ void setErrorState(MovementResult movementResult) {
   sevSeg.clear();
   sevSeg.writeDigitNum(0, movementResult, false);
   sevSeg.writeDisplay();
-
-  tonearmController.setClutchPosition(HorizontalClutchPosition::Disengage);
 
   // Wait for the user to press the Play/Home or Pause/Unpause buttons to break out of the error state
   while(!mux.readDigitalValue(MultiplexerInput::PlayHomeButton) && !mux.readDigitalValue(MultiplexerInput::PauseButton)) { delay(1); }

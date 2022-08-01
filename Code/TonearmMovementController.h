@@ -56,6 +56,10 @@ class TonearmMovementController {
         // Set the position of the horizontal clutch, while also accounting for the delay and shutting off the motor at the end of the movement.
         void setClutchPosition(HorizontalClutchPosition position);
 
+        // Set the top motor speed that the horizontal motor can travel. This is only used after the horizontal sensor has been found and
+        // we are applying the calibration relative move.
+        void setTopMotorSpeed(uint8_t topSpeed);
+
     private:        
         // Set all pins that the motor is using to LOW, as well as the motor demultiplexer.
         void releaseCurrentFromMotors();
@@ -87,6 +91,10 @@ class TonearmMovementController {
 
         // How long it is estimated that the clutch takes to engage or disengage.
         uint16_t clutchEngagementMs;
+
+        // The top motor speed that the horizontal motor can travel. This is only used after the horizontal sensor has been found and
+        // we are applying the calibration relative move.
+        uint8_t topMotorSpeed;
 };
 
 #endif

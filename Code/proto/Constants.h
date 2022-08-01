@@ -14,13 +14,21 @@
 
 /********** CALIBRATION VALUES */
 
-    // The motors used in this project are 28BYJ-48 stepper motors, which I've found to cap at 11 RPM 
-    // before becoming too unreliable. 8 or 9 I've found to be a good balance for speed and reliability at 5v DC.
-    #define DEFAULT_MOVEMENT_RPM 10
+    // The "middle of the road" RPM that a stepper should move.
+    #define MOVEMENT_RPM_DEFAULT 10
+
+    // How fast the stepper should move when it is seeking an optical sensor.
+    #define MOVEMENT_RPM_SENSOR_SEEK 8
+
+    // The top speed that a stepper will ever move at.
+    #define MOVEMENT_RPM_TOP_SPEED 14
+
+    // How fast the vertical stepper should move when it is carefully setting down the tonearm.
+    #define MOVEMENT_RPM_CAREFUL 3
 
     // The approximate number of steps between the play sensor, and the homing mount. This value is only used to move
     // the tonearm counterclockwise, so it accounts for some extra steps to push the tonearm into the mount.
-    #define STEPS_FROM_PLAY_SENSOR_HOME 1025
+    #define STEPS_FROM_PLAY_SENSOR_HOME 700
 
     // These are timeouts used for error checking, so the hardware doesn't damage itself.
     // Essentially, if the steps exceed this number and the motor has not yet reached its

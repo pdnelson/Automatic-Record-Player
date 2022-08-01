@@ -65,7 +65,9 @@ MovementResult TonearmMovementController::moveTonearmHorizontally(uint8_t destin
       }
     }
 
-    this->horizontalRelativeMove(calibration, speed, movementDirection); // Move tonearm additional steps to account for calibration set by rear potentiometers.
+    this->horizontalRelativeMove(calibration, 14, movementDirection);
+
+    delay(200);
 
     this->releaseCurrentFromMotors();
     this->setClutchPosition(HorizontalClutchPosition::Disengage);
@@ -156,4 +158,8 @@ void TonearmMovementController::setClutchPosition(HorizontalClutchPosition posit
 
 void TonearmMovementController::setClutchEngagementMs(uint16_t ms) {
   this->clutchEngagementMs = ms;
+}
+
+void TonearmMovementController::setTopMotorSpeed(uint8_t topSpeed) {
+  this->topMotorSpeed = topSpeed;
 }
