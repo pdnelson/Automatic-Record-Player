@@ -156,10 +156,7 @@ void monitorCommandButtons() {
   }
   
   // If the play/home button is pressed, the command executes
-  else if(mux.readDigitalValue(MultiplexerInput::PlayHomeButton) ||
-   (mux.readDigitalValue(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor) && 
-    mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) == AutoManualSwitchPosition::Automatic)
-    ) {
+  else if(mux.readDigitalValue(MultiplexerInput::PlayHomeButton)) {
 
     // If the tonearm is past the location of the home sensor, then this button will home it. Otherwise, it will execute
     // the play routine.

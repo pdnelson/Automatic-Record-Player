@@ -18,7 +18,7 @@
     #define MOVEMENT_RPM_DEFAULT 10
 
     // How fast the stepper should move when it is seeking an optical sensor.
-    #define MOVEMENT_RPM_SENSOR_SEEK 8
+    #define MOVEMENT_RPM_SENSOR_SEEK 5
 
     // The top speed that a stepper will ever move at.
     #define MOVEMENT_RPM_TOP_SPEED 14
