@@ -8,6 +8,7 @@
     /* Main loop functions */
     void monitorCommandButtons();
     void monitorSevenSegmentInput();
+    void monitorPickupSensor();
     void calibrationSettingLoop();
     void updateSevenSegmentDisplay(double newValue);
 

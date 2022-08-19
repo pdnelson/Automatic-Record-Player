@@ -42,7 +42,10 @@ enum MultiplexerInput : uint8_t {
     // S10
     RecordSizeSelector2 = 9,
 
-    UNUSED_MUX_S11 = 10,
+    // The "pickup" position optical sensor, which, when tripped so many times within a certain interval, will trigger the homing routine.
+    // S11
+    HorizontalPickupOpticalSensor = 10,
+
     UNUSED_MUX_S12 = 11,
     UNUSED_MUX_S13 = 12,
 

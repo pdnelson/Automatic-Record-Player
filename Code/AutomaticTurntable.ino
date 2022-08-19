@@ -78,6 +78,13 @@ volatile unsigned long currMillisSpeed = millis();
 volatile unsigned long lastMillisSpeed = currMillisSpeed;
 volatile double currSpeed;
 
+// Used for the pickup sensor
+uint8_t consecutivePickupSensorChanges = 0;
+bool lastPickupSensorStatus = false;
+unsigned long lastMillisPickup = __LONG_MAX__;
+
+bool paused = false;
+
 void setup() { //Serial.begin(SERIAL_SPEED);
   // Set pins
   pinMode(ArduinoPin::MovementStatusLed, OUTPUT);
@@ -145,6 +152,7 @@ void setup() { //Serial.begin(SERIAL_SPEED);
 void loop() {
   monitorCommandButtons();
   monitorSevenSegmentInput();
+  monitorPickupSensor();
 }
 
 // When a command button is pressed (i.e. Home/Play, or Pause/Unpause), then its respective command will be executed.
@@ -191,6 +199,53 @@ void monitorSevenSegmentInput() {
   else newValue = currSpeed;
 
   updateSevenSegmentDisplay(newValue);
+}
+
+// Monitor the pickup sensor. If this sensor detects that the tonearm is traveling over the end deadwax of a record, it
+// it will execute the homing routine. This will only occur if the auto/manual switch is set to Automatic.
+//
+// TODO: This method is not very accurate, and results in a lot of misfires (or no-fires). In the future, a smaller
+// sensor will need to be used, the interrupter's resolution will need to be increased, and an additional sensor will
+// need to be added so that we can determine the direction the tonearm is moving.
+//
+// Presently, no direction is being checked, so every sensor change is being taken into account, which is problematic 
+// because no record's grooves will sit perfectly in the center of a turntable. There will ALWAYS be some degree of 
+// wobble, which can happen back and forth over the falling/rising edge of the sensor/interrupter.
+void monitorPickupSensor() {
+  if(!paused && mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) == AutoManualSwitchPosition::Automatic) {
+    bool currPickupSensorStatus = mux.readDigitalValue(MultiplexerInput::HorizontalPickupOpticalSensor);
+    unsigned long currMillisPickup = millis();
+
+    if(currPickupSensorStatus != lastPickupSensorStatus) {
+
+      // The base values were found through trial on error, so this equation just translates the interval to whatever speed the
+      // turntable is currently spinning at.
+      double pickupInterval = (TONEARM_PICKUP_BASE_INTERVAL - (TONEARM_PICKUP_BASE_INTERVAL * lastSevSegValue / TONEARM_PICKUP_BASE_SPEED)) + TONEARM_PICKUP_BASE_INTERVAL;
+
+      // Add to the consecutivePickupSensorChanges if we are within the pickup interval and debounce range. Otherwise, reset to 0.
+      if((currMillisPickup - lastMillisPickup) > TONEARM_PICKUP_DEBOUNCE_MS && (currMillisPickup - lastMillisPickup) < pickupInterval) {
+        consecutivePickupSensorChanges++;
+      }
+      else {
+        consecutivePickupSensorChanges = 0;
+      }
+
+      lastMillisPickup = currMillisPickup;
+      lastPickupSensorStatus = currPickupSensorStatus;
+    }
+
+    // After x consecutive sensor status changes between the debounce and pickup interval, run the homing routine.
+    if(consecutivePickupSensorChanges == TONEARM_PICKUP_CONSECUTIVE_SENSOR_CHANGES) {
+      MovementResult movementStatus = homeRoutine();
+
+      // If the movement was anything other than success/none, then it failed, and we must set the error state.
+      if(movementStatus != MovementResult::Success && movementStatus != MovementResult::None) {
+        setErrorState(movementStatus);
+      }
+
+      consecutivePickupSensorChanges = 0;
+    }
+  }
 }
 
 // This loop is what is executed while in "calibration" mode. This implementation allows the user to switch between
@@ -285,6 +340,7 @@ void updateSevenSegmentDisplay(double newValue) {
 MovementResult playRoutine() {
   digitalWrite(ArduinoPin::MovementStatusLed, HIGH);
   digitalWrite(ArduinoPin::PauseStatusLed, LOW);
+  paused = false;
 
   MovementResult result = MovementResult::None;
 
@@ -310,6 +366,7 @@ MovementResult playRoutine() {
 MovementResult homeRoutine() {
   digitalWrite(ArduinoPin::MovementStatusLed, HIGH);
   digitalWrite(ArduinoPin::PauseStatusLed, LOW);
+  paused = false;
 
   MovementResult result = MovementResult::None;
 
@@ -332,6 +389,7 @@ MovementResult homeRoutine() {
 MovementResult pauseOrUnpause() {
   digitalWrite(ArduinoPin::MovementStatusLed, LOW);
   digitalWrite(ArduinoPin::PauseStatusLed, HIGH);
+  paused = true;
 
   MovementResult result = MovementResult::None;
 
@@ -355,6 +413,7 @@ MovementResult pauseOrUnpause() {
     result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, tonearmSetRpm);
 
     digitalWrite(ArduinoPin::PauseStatusLed, LOW);
+    paused = false;
   }
 
   return result;
