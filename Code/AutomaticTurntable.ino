@@ -220,7 +220,7 @@ void monitorPickupSensor() {
 
       // The base values were found through trial on error, so this equation just translates the interval to whatever speed the
       // turntable is currently spinning at.
-      double pickupInterval = (TONEARM_PICKUP_BASE_INTERVAL - (TONEARM_PICKUP_BASE_INTERVAL * lastSevSegValue / TONEARM_PICKUP_BASE_SPEED)) + TONEARM_PICKUP_BASE_INTERVAL;
+      double pickupInterval = (TONEARM_PICKUP_BASE_INTERVAL - (TONEARM_PICKUP_BASE_INTERVAL * currSpeed / TONEARM_PICKUP_BASE_SPEED)) + TONEARM_PICKUP_BASE_INTERVAL;
 
       // Add to the consecutivePickupSensorChanges if we are within the pickup interval and debounce range. Otherwise, reset to 0.
       if((currMillisPickup - lastMillisPickup) > TONEARM_PICKUP_DEBOUNCE_MS && (currMillisPickup - lastMillisPickup) < pickupInterval) {
@@ -517,4 +517,10 @@ void setErrorState(MovementResult movementResult) {
 
   sevSeg.clear();
   sevSeg.writeDisplay();
+
+  // Clear all statuses. Even though technically the next routine should execute right away, there's that 1/10000 chance that the user can
+  // release the button quickly enough to break out of the error state, but not yet execute the next command
+  digitalWrite(ArduinoPin::PauseStatusLed, HIGH);
+  digitalWrite(ArduinoPin::MovementStatusLed, HIGH);
+  paused = false;
 }
