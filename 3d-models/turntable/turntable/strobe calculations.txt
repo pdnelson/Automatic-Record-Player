@@ -1,0 +1,15 @@
+For 60 Hz:
+16.66 RPM = 432 marks
+33.33 RPM = 216 marks
+45 RPM = 160 marks
+78 RPM = 92.30769 marks
+
+For 50 Hz:
+16.66 RPM = 360 marks (rounded)
+33.33 RPM = 180 marks
+45 RPM = 133 marks (rounded)
+78 RPM = 77 marks (rounded)
+
+Formula
+
+hz * 2 / RPM * 60
