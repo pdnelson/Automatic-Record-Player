@@ -24,9 +24,7 @@ enum ArduinoPin : uint8_t {
     // to read a value from.
     MuxSelectorC = 4,
 
-    // One (of four) multiplexer selector pins. This is used (with the other pins) to select which device we want
-    // to read a value from.
-    MuxSelectorD = 5,
+    Unused_5 = 5,
 
     // This is the multiplexer pin that we read values from.
     MuxOutput = 6,
@@ -66,7 +64,9 @@ enum ArduinoPin : uint8_t {
     // to drive a DC motor through an H-bridge.
     HorizontalClutchMotorDir2 = A1,
 
-    UNUSED_ARDUINO_A2 = A2,
+    // The "home" or "play" position optical sensor, depending on which direction the tonearm is moving. If the tonearm is moving
+    // counter-clockwise, this sensor acts as the "home" sensor, whereas if it is moving clockwise, it acts as the play sensor.
+    HorizontalHomeOrPlayOpticalSensor = A2,
 
     // This is used, in combination with an interrupt, to calculate what speed the turntable is currently spinning at.
     SpeedSensor = A3,
@@ -79,8 +79,11 @@ enum ArduinoPin : uint8_t {
     // as well as calibration values when the calibration button is being held.
     Reserved7SegScl = A5,
 
-    UNUSED_ARDUINO_A6 = A6,
-    UNUSED_ARDUINO_A7 = A7
+    // The "pickup" position optical sensor, which, when tripped so many times within a certain interval, will trigger the homing routine.
+    HorizontalPickupOpticalSensor = A6,
+
+    // The direction the tonearm is moving when the pickup sensor is tripped. This is currently not being used.
+    HorizontalPickupDirectionOpticalSensor = A7
 };
 
 #endif
