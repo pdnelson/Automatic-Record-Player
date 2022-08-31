@@ -43,14 +43,14 @@ enum ArduinoPin : uint8_t {
 
     // This motor pin (1) channels into a 2-channel demultiplexer, so that either the vertical or horizontal motor receives
     // the pulses. Only one of these motors can ever be moving at once.
-    StepperPin1 = 10,
+    StepperPin1 = 11,
 
     // This is the pin used to select which motor we are moving, using the demultiplexers.
-    MotorAxisSelector = 11,
+    MotorAxisSelector = 10,
 
     // Indicator light so we can tell what the turntable is currently doing. This pin will be set HIGH if the turntable
     // is currently executing the "home" or "play" routine.
-    MovementStatusLed = 12,
+    MovementStatusLed = A0,
 
     // Indicator light so we can tell what the turntable is currently doing. This pin will be set HIGH if the turntable
     // is currently executing the "pause" routine, or if the tonearm is currently in the "pause" position.
@@ -58,7 +58,7 @@ enum ArduinoPin : uint8_t {
 
     // Setting this HIGH will cause the the horizontal motor clutch to either engage or disengage. This is used with HorizontalClutchMotorDir2
     // to drive a DC motor through an H-bridge.
-    HorizontalClutchMotorDir1 = A0,
+    HorizontalClutchMotorDir1 = 12,
 
     // Setting this HIGH will cause the the horizontal motor clutch to either engage or disengage. This is used with HorizontalClutchMotorDir1
     // to drive a DC motor through an H-bridge.

@@ -1,0 +1,16 @@
+1 - Output - Home status
+2 - Output - 5v
+3 - Input - Pause command
+4 - Input - Play command
+5 - Output - Movement status
+6 - Output - Pause status
+7 - Output - Speed switch status
+8 - Input - Speed set
+9 - Input - Move turntable
+10 - Output - Size indicator 2
+11 - Output - Size indicator 1
+12 - NC
+13 - NC
+14 - Output - Automatic switch status
+15 - NC
+16 - Output - GND
