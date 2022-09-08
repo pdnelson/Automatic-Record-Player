@@ -127,7 +127,7 @@ void setup() { //Serial.begin(SERIAL_SPEED);
 
   // If the turntable is turned on to "automatic," then home the whole tonearm if it is not already home.
   if(mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) == AutoManualSwitchPosition::Automatic && 
-    mux.readDigitalValue(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor)) {
+    digitalRead(ArduinoPin::HorizontalHomeOrPlayOpticalSensor)) {
     MovementResult currentMovementStatus = homeRoutine();
     homeExecuted = true;
   }
@@ -168,7 +168,7 @@ void monitorCommandButtons() {
 
     // If the tonearm is past the location of the home sensor, then this button will home it. Otherwise, it will execute
     // the play routine.
-    if(!mux.readDigitalValue(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor)) 
+    if(!digitalRead(ArduinoPin::HorizontalHomeOrPlayOpticalSensor)) 
       currentMovementStatus = playRoutine();
     else 
       currentMovementStatus = homeRoutine();
@@ -213,7 +213,7 @@ void monitorSevenSegmentInput() {
 // wobble, which can happen back and forth over the falling/rising edge of the sensor/interrupter.
 void monitorPickupSensor() {
   if(!paused && mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) == AutoManualSwitchPosition::Automatic) {
-    bool currPickupSensorStatus = mux.readDigitalValue(MultiplexerInput::HorizontalPickupOpticalSensor);
+    bool currPickupSensorStatus = digitalRead(ArduinoPin::HorizontalPickupOpticalSensor);
     unsigned long currMillisPickup = millis();
 
     if(currPickupSensorStatus != lastPickupSensorStatus) {
@@ -349,7 +349,7 @@ MovementResult playRoutine() {
   result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, MOVEMENT_RPM_DEFAULT);
   if(result != MovementResult::Success) return result;
 
-  result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, calibration, MOVEMENT_RPM_SENSOR_SEEK);
+  result = tonearmController.moveTonearmHorizontally(ArduinoPin::HorizontalHomeOrPlayOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, calibration, MOVEMENT_RPM_SENSOR_SEEK);
   if(result != MovementResult::Success) return result;
 
   result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, 3);
@@ -373,7 +373,7 @@ MovementResult homeRoutine() {
   result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalUpperLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, MOVEMENT_RPM_DEFAULT);
   if(result != MovementResult::Success) return result;
 
-  result = tonearmController.moveTonearmHorizontally(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, STEPS_FROM_PLAY_SENSOR_HOME, MOVEMENT_RPM_TOP_SPEED);
+  result = tonearmController.moveTonearmHorizontally(ArduinoPin::HorizontalHomeOrPlayOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, STEPS_FROM_PLAY_SENSOR_HOME, MOVEMENT_RPM_TOP_SPEED);
   if(result != MovementResult::Success) return result;
 
   result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, MOVEMENT_RPM_DEFAULT);
@@ -403,7 +403,7 @@ MovementResult pauseOrUnpause() {
     uint8_t tonearmSetRpm = 0;
 
     // If the tonearm is hovering over home position, then just go down at default speed
-    if(!mux.readDigitalValue(MultiplexerInput::HorizontalHomeOrPlayOpticalSensor)) {
+    if(!digitalRead(ArduinoPin::HorizontalHomeOrPlayOpticalSensor)) {
       tonearmSetRpm = MOVEMENT_RPM_DEFAULT;
     }
 

@@ -41,7 +41,7 @@ MovementResult TonearmMovementController::moveTonearmHorizontally(uint8_t destin
     // Set values needed for movement.
     unsigned int movementStepCount = 0;
     this->tonearmMotors.setSpeed(speed);
-    bool currentSensorStatus = this->inputMux.readDigitalValue(destinationSensor); 
+    bool currentSensorStatus = digitalRead(destinationSensor); 
 
     // Determine what direction we're moving.
     TonearmMovementDirection movementDirection = currentSensorStatus ? TonearmMovementDirection::Clockwise : TonearmMovementDirection::Counterclockwise;
@@ -50,7 +50,7 @@ MovementResult TonearmMovementController::moveTonearmHorizontally(uint8_t destin
     this->setClutchPosition(HorizontalClutchPosition::Engage);
 
     // Keep moving until the sensor is the opposite of what it started at.
-    while(this->inputMux.readDigitalValue(destinationSensor) == currentSensorStatus) {
+    while(digitalRead(destinationSensor) == currentSensorStatus) {
       this->tonearmMotors.step(movementDirection);
 
       // If the sensor isn't hit within the expected number of steps, the movement failed.
