@@ -24,11 +24,11 @@
     #define MOVEMENT_RPM_TOP_SPEED 14
 
     // How fast the vertical stepper should move when it is carefully setting down the tonearm.
-    #define MOVEMENT_RPM_CAREFUL 3
+    #define MOVEMENT_RPM_CAREFUL 4
 
     // The approximate number of steps between the play sensor, and the homing mount. This value is only used to move
     // the tonearm counterclockwise, so it accounts for some extra steps to push the tonearm into the mount.
-    #define STEPS_FROM_PLAY_SENSOR_HOME 700
+    #define STEPS_FROM_PLAY_SENSOR_HOME 400
 
     // These are timeouts used for error checking, so the hardware doesn't damage itself.
     // Essentially, if the steps exceed this number and the motor has not yet reached its
@@ -36,9 +36,12 @@
     #define VERTICAL_MOVEMENT_TIMEOUT_STEPS 1500
     #define HORIZONTAL_MOVEMENT_TIMEOUT_STEPS 3000
 
-    #define CLUTCH_ENGAGEMENT_MS 200
+    #define CLUTCH_ENGAGEMENT_MS 100
 
     #define MULTIPLEXER_DELAY_MICROS 10
+
+    // The amount of time since the last speed sensor interrupt before we consider the turntable "stopped"
+    #define TURNTABLE_STOPPED_MS 2500
 
 /********** USER SETTING CALIBRATION VALUES */
 

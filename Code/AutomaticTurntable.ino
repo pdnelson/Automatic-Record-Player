@@ -33,8 +33,7 @@ Multiplexer mux = Multiplexer(
   ArduinoPin::MuxOutput, 
   ArduinoPin::MuxSelectorA, 
   ArduinoPin::MuxSelectorB, 
-  ArduinoPin::MuxSelectorC, 
-  ArduinoPin::MuxSelectorD
+  ArduinoPin::MuxSelectorC
 );
 
 // The tonearmClutch allows us to engage or disengage the horizontal gearing to either allow for automatic
@@ -192,8 +191,8 @@ void monitorSevenSegmentInput() {
     calibrationSettingLoop();
   }
 
-  // If 1.5 seconds elapse without a speed sensor interrupt, we can assume that the turntable has stopped.
-  if(millis() - currMillisSpeed > 2500 && currSpeed > 0.0) {
+  // If x seconds elapse without a speed sensor interrupt, we can assume that the turntable has stopped.
+  if(millis() - currMillisSpeed > TURNTABLE_STOPPED_MS && currSpeed > 0.0) {
     newValue = 0.0;
   }
   else newValue = currSpeed;
@@ -352,7 +351,7 @@ MovementResult playRoutine() {
   result = tonearmController.moveTonearmHorizontally(ArduinoPin::HorizontalHomeOrPlayOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, calibration, MOVEMENT_RPM_SENSOR_SEEK);
   if(result != MovementResult::Success) return result;
 
-  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, 3);
+  result = tonearmController.moveTonearmVertically(MultiplexerInput::VerticalLowerLimit, VERTICAL_MOVEMENT_TIMEOUT_STEPS, MOVEMENT_RPM_CAREFUL);
   if(result != MovementResult::Success) return result;
 
   digitalWrite(ArduinoPin::MovementStatusLed, LOW);
