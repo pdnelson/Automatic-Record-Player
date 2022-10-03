@@ -1,0 +1,5 @@
+1 - Speed select A
+2 - Speed select B
+3 - Turntable power logic
+4 - GND
+5 - 12v in
