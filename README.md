@@ -4,11 +4,12 @@ Some notes on this turntable include (see "Features, User Inputs and Routines" s
 - Stereo RCA outputs for a receiver
   - Includes Ground line
 - Able to fit any commercial cartridge
-- 45 and 33-RPM speeds
-  - Speed monitored on 7-segment display
-- Semi-automatic
+- 16 2/3, 33 1/3, 45 and 78-RPM speeds
+  - Digital or analog speed monitoring on 7-segment display or strobe disc, respectively
+- Automatic functionality
   - Returns tonearm to "home" position automatically after a record is finished
   - Other buttons that contain other pre-defined routines (play and pause) that the user must initiate
+  - Output port to allow another device to execute commands and read statuses
 - Standard PC 3-prong female plug in the back to allow hookup to 120v or 230v households
 - Counterbalance weight to fine-tune tonearm weight
 - Skate/Anti-skate weight to fine-tune horizontal drift
