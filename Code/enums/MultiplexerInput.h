@@ -6,16 +6,16 @@ enum MultiplexerInput : uint8_t {
 
     // Positioning sensor for the vertical tonearm movement. This is the lower sensor, indicating the "play"/"home" vertical position of the tonearm.
     VerticalLowerLimit = 0,
-    
-    // Positioning sensor for the vertical tonearm movement. This is the upper sensor, indicating the "pause" vertical position of the tonearm.
-    VerticalUpperLimit = 3,
+
+    // The "pause" button, which will either lift the tonearm up (if it is currently down), or set the tonearm down (if it is currently up).
+    PauseButton = 1,
     
     // The "play"/"home" button, which will move the tonearm (horizontally) to the play sensor if the play sensor is HIGH, or 
     // move the tonearm (horizontally) to the home sensor if the play sensor is LOW. 
     PlayHomeButton = 2,
-
-    // The "pause" button, which will either lift the tonearm up (if it is currently down), or set the tonearm down (if it is currently up).
-    PauseButton = 1,
+    
+    // Positioning sensor for the vertical tonearm movement. This is the upper sensor, indicating the "pause" vertical position of the tonearm.
+    VerticalUpperLimit = 3,
 
     // This, used together with RecordSizeSelector2, tells the software which record size it should be looking for.
     // If this is HIGH while RecordSizeSelector2 is LOW, the software will use the 7" optical sensor.

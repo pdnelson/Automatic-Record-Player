@@ -7,8 +7,8 @@
 7 - Output - Speed switch status
 8 - Input - Speed set
 9 - Input - Move turntable
-10 - Output - Size indicator 2
-11 - Output - Size indicator 1
+10 - Output - Size indicator 1
+11 - Output - Size indicator 2
 12 - Input - Alt. Speed Set
 13 - Output - Alt. Speed Status
 14 - Output - Automatic switch status

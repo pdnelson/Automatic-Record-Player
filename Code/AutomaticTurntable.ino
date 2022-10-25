@@ -212,7 +212,7 @@ void monitorSevenSegmentInput() {
 // wobble, which can happen back and forth over the falling/rising edge of the sensor/interrupter.
 void monitorPickupSensor() {
   if(!paused && mux.readDigitalValue(MultiplexerInput::AutoManualSwitch) == AutoManualSwitchPosition::Automatic) {
-    bool currPickupSensorStatus = digitalRead(ArduinoPin::HorizontalPickupOpticalSensor);
+    bool currPickupSensorStatus = digitalRead(ArduinoPin::PickupEncoderA);
     unsigned long currMillisPickup = millis();
 
     if(currPickupSensorStatus != lastPickupSensorStatus) {
