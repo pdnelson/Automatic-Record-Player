@@ -1,5 +1,5 @@
 # Automatic Turntable Introduction
-This is a semi-automatic turntable that plays 7", 10" or 12" records! The automatic capabilities will be powered by an Arduino Nano Every, 2 stepper motors, and a bunch of sensors.
+This is a fully automatic turntable that plays 7", 10" or 12" records! The automatic capabilities are powered by an Arduino Nano Every, 2 stepper motors, and a bunch of sensors.
 Some notes on this turntable include (see "Features, User Inputs and Routines" section for more details):
 - Stereo RCA outputs for a receiver
   - Includes Ground line
@@ -36,25 +36,18 @@ The pause button will lift the tonearm up until the pause limit switch becomes "
 
 When the pause button is pressed again, if the tonearm is directly above "home" position, it will be set fown quickly until the lower limit switch becomes "high." Otherwise, if it is NOT over "home," it will be gently set down.
 
-## Speed Selector
-The speed selector switch is a 3-position switch with the center position turning the turntable motor off, the lower position spinning it at 33-RPM, and the upper position spinning it at 45-RPM.
+## Speed Selectors
+There are two speed selector switches: The main selector switch, and the "alternate" speed button.
+
+The main speed selector switch is a 3-position switch with the center position turning the turntable motor off, the lower position spinning it at 33 1/3-RPM, and the upper position spinning it at 45-RPM. When the "alternate" speed button is pressed, the switch's upper position will spin at 78-RPM, and the lower will spin at 16 2/3 RPM.
 
 ## Fine-Tune Speed Adjustment
-On the right side of the record player, there are two potentiometers: One for adjusting the 33-RPM speed setting, and the other for adjusting the 45-RPM speed setting. This allows the user to perfectly dial in the speed they are looking to play at.
+On the right side of the record player, there are four potentiometers: One for each speed setting. This allows the user to perfectly dial in the speed they are looking to play at.
 
-If desired, the 33-RPM speed setting can also be used to play at 16-RPM by adjusting the 33-RPM potentiometer.
+## Record size selector
+The record size selector is a 3-position switch, with the top indicating 12", middle 10" and lower 7" records. This switch activates user-set calibration values for how many steps the tonearm should move past the play sensor to the edge of the record.
 
-## Active Play Sensor Selector
-There are three different sensors that can tell the tonearm where to set down on the record: One for 7", 10" and 12". This switch selects which one you want to be used,  wh the lower position selecting 7", middle selecting 10", and upper selecting 12".
+## Calibration Button
+When the calibration button is pressed, the seven-segment display will display the active calibration value set by the record size selector. This value will indicate the number of steps taken once the tonearm moves past the play sensor during the play routine. In addition to showing the calibration value, this will also cause the pause button to increment the value, and the play button to decrement it. This can be used to fine-tune exact step calibrations, so the tonearm always lands on the correct spot of the record.
 
-If switching between play positions is not necessary, this setting can be set with a jumper on JP1. Connect the leftmost two pins of this jumper for the 7" sensor, no jumper for 10", and the rightmost two pins for 12"
-
-## Calibration Potentiometers
-The calibration potentiometers will push a play movement X steps past the selected play sensor, which allows the user to find-tune where the tonearm is being set down on the record.
-
-Only ONE of these calibration potentiometers is active at once, determined by the Active Play Sensor Selector switch described above. 
-
-## Display play calibration
-Display play calibration will display the numeric value that corresponds to the rear calibration potentiometer that is currently selected (between 0 and 50, inclusive).
-
-The selected potentiometer is determined by the Active Play Sensor Selector.
+Releasing this button will save the setting to the Arduino's EEPROM. If the value is changed, saving will be indicated by the movement status LED flashing briefly.
