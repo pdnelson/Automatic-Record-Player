@@ -1,0 +1,7 @@
+aluminum = 2.70 g/cm^3
+pulley radius = 233.8 mm = 23.38 cm
+pulley height = 10 mm - 1 cm
+
+pulley volume = π * 23.38^2 * 1 = 1717.2712
+
+estimated mass = 1717.2712 * 2.7 = 4636.63224 g = approx. 4.5 kg
