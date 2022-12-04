@@ -66,7 +66,10 @@ MovementResult TonearmMovementController::moveTonearmHorizontally(uint8_t destin
     return MovementResult::Success;
 }
 
-MovementResult TonearmMovementController::moveTonearmVertically(uint8_t destinationSensor, unsigned int timeout, uint8_t speed) {
+MovementResult TonearmMovementController::moveTonearmVertically(TonearmMovementDirection direction, unsigned int timeout, uint8_t speed) {
+  // Determine the destination sensor based on the direction passed.
+  uint8_t destinationSensor = (direction == TonearmMovementDirection::Up) ? this->verticalUpperLimit : this->verticalLowerLimit;
+
   // Only perform the operation if the tonearm is not already at its destination.
   if(!this->inputMux.readDigitalValue(destinationSensor)) {
     // Select vertical movement.
@@ -76,23 +79,14 @@ MovementResult TonearmMovementController::moveTonearmVertically(uint8_t destinat
     unsigned int movementStepCount = 0;
     this->tonearmMotors.setSpeed(speed);
 
-    // Determine what direction we're moving.
-    TonearmMovementDirection movementDirection = TonearmMovementDirection::NoDirection;
-    if(destinationSensor == this->verticalLowerLimit) {
-      movementDirection = TonearmMovementDirection::Down; // Must move down to reach the lower limit.
-    }
-    else if(destinationSensor == this->verticalUpperLimit) {
-      movementDirection = TonearmMovementDirection::Up; // Must move up to reach the upper limit.
-    }
-
     // Move the vertical axis until it reaches its destination.
     while(!this->inputMux.readDigitalValue(destinationSensor)) {
-      this->tonearmMotors.step(movementDirection);
+      this->tonearmMotors.step(direction);
 
       // If the limit isn't hit within the expected number of steps, the movement failed.
       if(movementStepCount++ >= timeout) {
         this->releaseCurrentFromMotors();
-        if(movementDirection == TonearmMovementDirection::Up)
+        if(direction == TonearmMovementDirection::Up)
           return MovementResult::VerticalPositiveDirectionError;
 
         else

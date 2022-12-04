@@ -34,10 +34,10 @@ class TonearmMovementController {
         MovementResult moveTonearmHorizontally(uint8_t destinationSensor, unsigned int timeout, int calibration, uint8_t speed);
         
         // Move the tonearm vertically until it reaches the destination limit switch.
-        // destinationLimit - The limit switch that the tonearm is traveling to. This limit MUST be from the multiplexer passed through the constructor.
+        // direction - The direction that the tonearm should be moving.
         // timeout - The number of steps that should be taken before an error occurs.
         // speed - The speed, in RPM, that the motor moving the tonearm should spin.
-        MovementResult moveTonearmVertically(uint8_t destinationLimit, unsigned int timeout, uint8_t speed);
+        MovementResult moveTonearmVertically(TonearmMovementDirection direction, unsigned int timeout, uint8_t speed);
         
         // Move the tonearm horizontally by the given step count. A positive value will move the tonearm clockwise, and a negative value
         // counter-clockwise. This is a blind movement, meaning there is no check at the end that the tonearm successfully moved all
