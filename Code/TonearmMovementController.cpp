@@ -35,7 +35,7 @@ MovementResult TonearmMovementController::moveTonearmHorizontally(uint8_t destin
     bool currentSensorStatus = digitalRead(destinationSensor); 
 
     // Determine what direction we're moving.
-    TonearmMovementDirection movementDirection = currentSensorStatus ? TonearmMovementDirection::Clockwise : TonearmMovementDirection::Counterclockwise;
+    TonearmMovementDirection movementDirection = currentSensorStatus ? TonearmMovementDirection::Counterclockwise : TonearmMovementDirection::Clockwise;
 
     // Engage clutch so gears can move the tonearm.
     this->setClutchPosition(HorizontalClutchPosition::Engage);
