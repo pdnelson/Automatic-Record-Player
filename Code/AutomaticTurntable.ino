@@ -46,10 +46,6 @@ DcMotor horizontalClutch = DcMotor(
 // The tonearmController is in charge of automatically moving the tonearm vertically or horizontally.
 TonearmMovementController tonearmController = TonearmMovementController(
   mux,
-  ArduinoPin::StepperPin1,
-  ArduinoPin::StepperPin2,
-  ArduinoPin::StepperPin3,
-  ArduinoPin::StepperPin4,
   tonearmMotor,
   ArduinoPin::MotorAxisSelector,
   horizontalClutch,

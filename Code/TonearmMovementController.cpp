@@ -6,10 +6,6 @@
 
 TonearmMovementController::TonearmMovementController(
   Multiplexer inputMux, 
-  uint8_t motorPin1, 
-  uint8_t motorPin2, 
-  uint8_t motorPin3, 
-  uint8_t motorPin4, 
   Stepper tonearmMotors, 
   uint8_t motorSelectPin, 
   DcMotor horizontalClutch, 
@@ -19,11 +15,6 @@ TonearmMovementController::TonearmMovementController(
       tonearmMotors(tonearmMotors),
       horizontalClutch(horizontalClutch)
 {
-    this->motorPin1 = motorPin1;
-    this->motorPin2 = motorPin2;
-    this->motorPin3 = motorPin3;
-    this->motorPin4 = motorPin4;
-    
     this->motorSelectPin = motorSelectPin;
     pinMode(motorSelectPin, OUTPUT);
 
@@ -134,11 +125,7 @@ void TonearmMovementController::horizontalRelativeMove(uint16_t steps, uint8_t s
 
 // This is used to release current from both motors so they aren't drawing power when not in use.
 void TonearmMovementController::releaseCurrentFromMotors() {
-    digitalWrite(this->motorPin1, LOW);
-    digitalWrite(this->motorPin2, LOW);
-    digitalWrite(this->motorPin3, LOW);
-    digitalWrite(this->motorPin4, LOW);
-
+    this->tonearmMotors.releaseMotorCurrent();
     digitalWrite(this->motorSelectPin, LOW);
 }
 

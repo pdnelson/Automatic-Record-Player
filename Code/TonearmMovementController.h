@@ -18,16 +18,12 @@ class TonearmMovementController {
 
         // Constructor
         TonearmMovementController(
-            Multiplexer inputMux, 
-            uint8_t motorPin1, 
-            uint8_t motorPin2, 
-            uint8_t motorPin3, 
-            uint8_t motorPin4, 
+            Multiplexer inputMux,
             Stepper tonearmMotors, 
-            uint8_t motorSelectPin, 
+            uint8_t motorSelectPin, // arduino output pin
             DcMotor horizontalClutch, 
-            uint8_t verticalLowerLimit, 
-            uint8_t verticalUpperLimit
+            uint8_t verticalLowerLimit, // mux input pin
+            uint8_t verticalUpperLimit  // mux input pin
         );
 
         // Move the tonearm horizontally until it reaches the destination sensor.
@@ -69,10 +65,6 @@ class TonearmMovementController {
 
         // This represents either the vertical or horizontal stepper motor, denoted by the motorSelectPin.
         Stepper tonearmMotors;
-        uint8_t motorPin1;
-        uint8_t motorPin2;
-        uint8_t motorPin3;
-        uint8_t motorPin4;
 
         // This is the pin that we use to select the vertical or horizontal stepper motors for movement. Only one
         // motor can be moving at a time.
