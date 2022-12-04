@@ -6,7 +6,8 @@
 #include <Multiplexer.h>
 #include <DcMotor.h>
 #include "enums/MotorAxis.h"
-#include "enums/TonearmMovementDirection.h"
+#include "enums/HorizontalMovementDirection.h"
+#include "enums/VerticalMovementDirection.h"
 #include "enums/MovementResult.h"
 #include "enums/HorizontalClutchPosition.h"
 
@@ -37,14 +38,14 @@ class TonearmMovementController {
         // direction - The direction that the tonearm should be moving.
         // timeout - The number of steps that should be taken before an error occurs.
         // speed - The speed, in RPM, that the motor moving the tonearm should spin.
-        MovementResult moveTonearmVertically(TonearmMovementDirection direction, unsigned int timeout, uint8_t speed);
+        MovementResult moveTonearmVertically(VerticalMovementDirection direction, unsigned int timeout, uint8_t speed);
         
-        // Move the tonearm horizontally by the given step count. A positive value will move the tonearm clockwise, and a negative value
-        // counter-clockwise. This is a blind movement, meaning there is no check at the end that the tonearm successfully moved all
-        // steps. This is only intended to be used for calibration offsets, and moving a few steps to unlock gears.
+        // Move the tonearm horizontally by the given step count. This is a blind movement, meaning there is no check 
+        // at the end that the tonearm successfully moved all steps.
         // steps - The number of steps the tonearm should move.
         // speed - The speed, in RPM, that the motor moving the tonearm should spin.
-        void horizontalRelativeMove(uint16_t steps, uint8_t speed, TonearmMovementDirection direction);
+        // direction - The direction the tonearm should be moving.
+        void horizontalRelativeMove(uint16_t steps, uint8_t speed, HorizontalMovementDirection direction);
 
         // Set the value for how long it is expected that the clutch will take to engage or disengage from the horizontal gears.
         void setClutchEngagementMs(uint16_t ms);
