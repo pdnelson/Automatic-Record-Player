@@ -22,6 +22,8 @@ TonearmMovementController::TonearmMovementController(
     this->verticalUpperLimit = verticalUpperLimit;
 
     this->clutchEngagementMs = 0;
+    this->topMotorSpeed = 0;
+    this->verticalTimeout = 0;
 }
 
 // Moves the tonearm to a specified destination.
