@@ -38,7 +38,7 @@ class TonearmMovementController {
         // direction - The direction that the tonearm should be moving.
         // timeout - The number of steps that should be taken before an error occurs.
         // speed - The speed, in RPM, that the motor moving the tonearm should spin.
-        MovementResult moveTonearmVertically(VerticalMovementDirection direction, unsigned int timeout, uint8_t speed);
+        MovementResult moveTonearmVertically(VerticalMovementDirection direction, uint8_t speed);
         
         // Move the tonearm horizontally by the given step count. This is a blind movement, meaning there is no check 
         // at the end that the tonearm successfully moved all steps.
@@ -56,6 +56,9 @@ class TonearmMovementController {
         // Set the top motor speed that the horizontal motor can travel. This is only used after the horizontal sensor has been found and
         // we are applying the calibration relative move.
         void setTopMotorSpeed(uint8_t topSpeed);
+
+        // Set the max number of steps that the tonearm can travel vertically before being considered in error.
+        void setVerticalTimeout(unsigned int timeout);
 
     private:        
         // Set all pins that the motor is using to LOW, as well as the motor demultiplexer.
@@ -88,6 +91,9 @@ class TonearmMovementController {
         // The top motor speed that the horizontal motor can travel. This is only used after the horizontal sensor has been found and
         // we are applying the calibration relative move.
         uint8_t topMotorSpeed;
+
+        // If this step count is reached while making a vertical movement, the movement has failed and an error will be returned.
+        unsigned int verticalTimeout;
 };
 
 #endif

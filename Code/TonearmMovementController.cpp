@@ -66,7 +66,7 @@ MovementResult TonearmMovementController::moveTonearmHorizontally(uint8_t destin
     return MovementResult::Success;
 }
 
-MovementResult TonearmMovementController::moveTonearmVertically(VerticalMovementDirection direction, unsigned int timeout, uint8_t speed) {
+MovementResult TonearmMovementController::moveTonearmVertically(VerticalMovementDirection direction, uint8_t speed) {
   // Determine the destination sensor based on the direction passed.
   uint8_t destinationSensor = (direction == VerticalMovementDirection::Up) ? this->verticalUpperLimit : this->verticalLowerLimit;
 
@@ -84,7 +84,7 @@ MovementResult TonearmMovementController::moveTonearmVertically(VerticalMovement
       this->tonearmMotors.step(direction);
 
       // If the limit isn't hit within the expected number of steps, the movement failed.
-      if(movementStepCount++ >= timeout) {
+      if(movementStepCount++ >= this->verticalTimeout) {
         this->releaseCurrentFromMotors();
         if(direction == VerticalMovementDirection::Up)
           return MovementResult::VerticalPositiveDirectionError;
@@ -143,4 +143,8 @@ void TonearmMovementController::setClutchEngagementMs(uint16_t ms) {
 
 void TonearmMovementController::setTopMotorSpeed(uint8_t topSpeed) {
   this->topMotorSpeed = topSpeed;
+}
+
+void TonearmMovementController::setVerticalTimeout(unsigned int timeout) {
+  this->verticalTimeout = timeout;
 }
