@@ -1,3 +1,0 @@
-1 - Strobe logic (high = on, low = off)
-2 - 5v
-3 - GND
