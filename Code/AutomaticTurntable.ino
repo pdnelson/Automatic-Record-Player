@@ -7,16 +7,7 @@
 #include "enums/MultiplexerInput.h"
 #include "enums/MovementResult.h"
 #include "enums/AutoManualSwitchPosition.h"
-#include "enums/RecordSize.h"
 #include "TonearmMovementController.h"
-
-// Used for 7-segment display
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include "Adafruit_LEDBackpack.h"
-
-// Used for calibration storage
-#include <EEPROM.h>
 
 // Though this is one stepper motor declaration, this object actually handles both the vertical and horizontal
 // stepper motors. Which one is currently active is determined by the ArduinoPin::MotorAxisSelector.
@@ -53,21 +44,6 @@ TonearmMovementController tonearmController = TonearmMovementController(
   MultiplexerInput::VerticalUpperLimit
 );
 
-// The 7-segment display is used for the following:
-// - Displaying the speed that the turntable is spinning.
-// - If the user is pressing the calibration button, displaying the current sensor's calibration value.
-// - Error codes if a movement fails.
-Adafruit_7segment sevSeg = Adafruit_7segment();
-
-// These are calibration values set by the user to tell the tonearm how many steps to go past the "home" reference optical
-// sensor.
-uint16_t calibration7Inch = 0;
-uint16_t calibration10Inch = 0;
-uint16_t calibration12Inch = 0;
-
-// The last value that was written to the 7-segment display. This is used so that we don't write the same value to it.
-double lastSevSegValue = 0.0;
-
 // All of these fields are used to calculate the speed that the turntable is spinning.
 volatile unsigned long currMillisSpeed = millis();
 volatile unsigned long lastMillisSpeed = currMillisSpeed;
@@ -93,24 +69,18 @@ void setup() { //Serial.begin(SERIAL_SPEED);
   tonearmController.setVerticalTimeout(VERTICAL_MOVEMENT_TIMEOUT_STEPS);
   mux.setDelayMicroseconds(MULTIPLEXER_DELAY_MICROS);
 
-  // Start up seven-segment display
-  sevSeg.begin(SEV_SEG_START_ADDRESS);
-  sevSeg.print(0.0);
-  sevSeg.writeDisplay();
-
-  // Load calibration values from the EEPROM.
-  // If the calibration button is being held, default values will be set instead of loading from the EEPROM.
-  loadCalibrationEEPROMValues(mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue));
-
   // Engage the horizontal clutch. This will be setting it to the "starting" point for where we know it is engaged
   horizontalClutch.immediateStart(HorizontalClutchPosition::Engage);
 
   // Begin startup light show
   delay(100);
+  digitalWrite(ArduinoPin::PauseStatusLed, LOW);
   digitalWrite(ArduinoPin::MovementStatusLed, HIGH);
   delay(100);
+  digitalWrite(ArduinoPin::MovementStatusLed, LOW);
   digitalWrite(ArduinoPin::PauseStatusLed, HIGH);
   delay(100);
+  digitalWrite(ArduinoPin::MovementStatusLed, HIGH);
   digitalWrite(ArduinoPin::PauseStatusLed, LOW);
   delay(100);
   digitalWrite(ArduinoPin::MovementStatusLed, LOW);
@@ -147,7 +117,6 @@ void setup() { //Serial.begin(SERIAL_SPEED);
 
 void loop() {
   monitorCommandButtons();
-  monitorSevenSegmentInput();
   monitorPickupSensor();
 }
 
@@ -174,27 +143,6 @@ void monitorCommandButtons() {
   if(currentMovementStatus != MovementResult::Success && currentMovementStatus != MovementResult::None) {
     setErrorState(currentMovementStatus);
   }
-}
-
-// This will allow the 7-segment display to either display the current turntable speed from the input of the 
-// speed sensor, or one of the three calibration values.
-void monitorSevenSegmentInput() {
-
-  double newValue;
-
-  // If the calibration button is being pressed, enter "calibration" mode so the user can view or modify
-  // values.
-  if(mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue)) {
-    calibrationSettingLoop();
-  }
-
-  // If x seconds elapse without a speed sensor interrupt, we can assume that the turntable has stopped.
-  if(millis() - currMillisSpeed > TURNTABLE_STOPPED_MS && currSpeed > 0.0) {
-    newValue = 0.0;
-  }
-  else newValue = currSpeed;
-
-  updateSevenSegmentDisplay(newValue);
 }
 
 // Monitor the pickup sensor. If this sensor detects that the tonearm is traveling over the end deadwax of a record, it
@@ -244,92 +192,6 @@ void monitorPickupSensor() {
   }
 }
 
-// This loop is what is executed while in "calibration" mode. This implementation allows the user to switch between
-// all three calibrations while having the button held
-void calibrationSettingLoop() {
-
-  uint16_t calibrationDisplayValue = 0;
-
-  // Keep track of the old values so we can decide which ones to save in the EEPROM
-  uint16_t old7In = calibration7Inch;
-  uint16_t old10In = calibration10Inch;
-  uint16_t old12In = calibration12Inch;
-
-  // Delay/debounce
-  unsigned long lastButtonPressMsDelay = __LONG_MAX__;
-  unsigned long lastButtonPressMsDebounce = __LONG_MAX__;
-  unsigned long currButtonPressMs = 0;
-  bool buttonDelay = true;
-  bool buttonDebounce = true;
-  
-  // Iteration counting
-  uint16_t buttonPressIterationCount = 0;
-  uint16_t calibrationHoldChangeIterationCount = CALIBRATION_HOLD_CHANGE_INTERVAL;
-  uint16_t calibrationHoldChangeInterval = CALIBRATION_HOLD_CHANGE_MS;
-  uint16_t calibrationDebounceInterval = CALIBRATION_DEBOUNCE_MS;
-
-  // With this button-pressing implementation, we are tracking two separate values: the delay and debounce.
-  // For the delay, this is incrementing/decrementing the calibration value x number of times/second as they
-  // hold the button, while the debounce value prevents too many button presses from being registered at once.
-  // The delay will gradually increase the longer an increment/decrement button is held, so that further values
-  // can be reached more quickly; this is tracked by the "iteration counting" variables.
-  while(mux.readDigitalValue(MultiplexerInput::DisplayCalibrationValue)) {
-    currButtonPressMs = millis();
-    buttonDelay = currButtonPressMs - lastButtonPressMsDelay > calibrationHoldChangeInterval;
-    buttonDebounce = currButtonPressMs - lastButtonPressMsDebounce > calibrationDebounceInterval;
-
-    if(mux.readDigitalValue(MultiplexerInput::PauseButton) && calibrationDisplayValue < (CALIBRATION_VALUE_MAX - 1) && buttonDelay && buttonDebounce) {
-      switch(getActiveRecordSize()) {
-        case RecordSize::Rec7Inch: calibrationDisplayValue = calibration7Inch++; break;
-        case RecordSize::Rec10Inch: calibrationDisplayValue = calibration10Inch++; break;
-        case RecordSize::Rec12Inch: calibrationDisplayValue = calibration12Inch++;
-      }
-      lastButtonPressMsDelay = currButtonPressMs;
-      lastButtonPressMsDebounce = currButtonPressMs;
-      buttonPressIterationCount++;
-    }
-    else if(mux.readDigitalValue(MultiplexerInput::PlayHomeButton) && calibrationDisplayValue > 1 && buttonDelay && buttonDebounce) {
-      switch(getActiveRecordSize()) {
-        case RecordSize::Rec7Inch: calibrationDisplayValue = calibration7Inch--; break;
-        case RecordSize::Rec10Inch: calibrationDisplayValue = calibration10Inch--; break;
-        case RecordSize::Rec12Inch: calibrationDisplayValue = calibration12Inch--;
-      }
-      lastButtonPressMsDelay = currButtonPressMs;
-      lastButtonPressMsDebounce = currButtonPressMs;
-      buttonPressIterationCount++;
-    }
-    else if(!mux.readDigitalValue(MultiplexerInput::PauseButton) && !mux.readDigitalValue(MultiplexerInput::PlayHomeButton)) {
-      buttonPressIterationCount = 0;
-      calibrationHoldChangeIterationCount = CALIBRATION_HOLD_CHANGE_INTERVAL;
-      calibrationHoldChangeInterval = CALIBRATION_HOLD_CHANGE_MS;
-      lastButtonPressMsDelay = __LONG_MAX__;
-      calibrationDebounceInterval = CALIBRATION_DEBOUNCE_MS;
-      calibrationDisplayValue = getActiveSensorCalibration();
-    }
-
-    // If we have reached the destination number of iterations with a button held, then we can increase the speed at which 
-    // numbers increase/decrease by.
-    if(buttonPressIterationCount == calibrationHoldChangeIterationCount && calibrationHoldChangeInterval > CALIBRATION_HOLD_LOWEST_MS) {
-      calibrationHoldChangeInterval = calibrationHoldChangeInterval - CALIBRATION_HOLD_DECREMENT_MS;
-      buttonPressIterationCount = 0;
-      calibrationDebounceInterval = 0; // Once the user holds the button so long, we know the debounce interval is no longer necessary
-    }
-
-    updateSevenSegmentDisplay((double)calibrationDisplayValue);
-  }
-
-  updateCalibrationEEPROMValues(old7In, old10In, old12In);
-}
-
-void updateSevenSegmentDisplay(double newValue) {
-  // Only re-write the display if the number will be different
-  if(newValue != lastSevSegValue) {
-    sevSeg.print(newValue);
-    sevSeg.writeDisplay();
-    lastSevSegValue = newValue;
-  }
-}
-
 // Move the tonearm clockwise to the play sensor
 // This is a multi-movement routine, meaning that multiple tonearm movements are executed. If one of those movements fails, the
 // whole routine is aborted.
@@ -340,16 +202,7 @@ MovementResult playRoutine() {
 
   MovementResult result = MovementResult::None;
 
-  int calibration = getActiveSensorCalibration();
-
-  result = tonearmController.moveTonearmVertically(VerticalMovementDirection::Up, MOVEMENT_RPM_DEFAULT);
-  if(result != MovementResult::Success) return result;
-
-  result = tonearmController.moveTonearmHorizontally(ArduinoPin::HorizontalHomeOrPlayOpticalSensor, HORIZONTAL_MOVEMENT_TIMEOUT_STEPS, calibration, MOVEMENT_RPM_SENSOR_SEEK);
-  if(result != MovementResult::Success) return result;
-
-  result = tonearmController.moveTonearmVertically(VerticalMovementDirection::Down, MOVEMENT_RPM_CAREFUL);
-  if(result != MovementResult::Success) return result;
+  // TODO: Rewrite this using the new play routine.
 
   digitalWrite(ArduinoPin::MovementStatusLed, LOW);
   
@@ -415,78 +268,6 @@ MovementResult pauseOrUnpause() {
   return result;
 }
 
-// Returns the calibration step offset for the given sensor.
-// The returned value will be the number of steps (clockwise or counterclockwise) that the horizontal motor should move.
-uint16_t getActiveSensorCalibration() {
-  switch(getActiveRecordSize()) {
-    case RecordSize::Rec7Inch:
-      return calibration7Inch;
-    case RecordSize::Rec10Inch:
-      return calibration10Inch;
-    case RecordSize::Rec12Inch:
-      return calibration12Inch;
-  }
-}
-
-RecordSize getActiveRecordSize() {
-  // If only RecordSizeSelector1 is HIGH (or BOTH RecordSelector1 and 2 are HIGH), we are using the 7" sensor
-  if(mux.readDigitalValue(MultiplexerInput::RecordSizeSelector1))
-    return RecordSize::Rec7Inch; 
-
-  // If only RecordSizeSelector2 is HIGH, we are using the 12" sensor
-  else if (mux.readDigitalValue(MultiplexerInput::RecordSizeSelector2))
-    return RecordSize::Rec12Inch;
-
-  // If NEITHER RecordSizeSelectors are HIGH, we are using the 10" sensor
-  else return RecordSize::Rec10Inch;
-}
-
-void loadCalibrationEEPROMValues(bool loadDefaults) {
-  // This mode is used so that the user can see if the 3-way switch is positioned correctly (with 7in pointing down, and 12in pointing up)
-  if(loadDefaults) {
-    calibration7Inch = CALIBRATION_7IN_DEFAULT;
-    calibration10Inch = CALIBRATION_10IN_DEFAULT;
-    calibration12Inch = CALIBRATION_12IN_DEFAULT;
-  }
-  else {
-    // Load calibration values from EEPROM
-    calibration7Inch = (EEPROM.read(CALIBRATION_7IN_EEPROM_START_ADDRESS) << 8) + EEPROM.read(CALIBRATION_7IN_EEPROM_START_ADDRESS + 1);
-    calibration10Inch = (EEPROM.read(CALIBRATION_10IN_EEPROM_START_ADDRESS) << 8) + EEPROM.read(CALIBRATION_10IN_EEPROM_START_ADDRESS + 1);
-    calibration12Inch = (EEPROM.read(CALIBRATION_12IN_EEPROM_START_ADDRESS) << 8) + EEPROM.read(CALIBRATION_12IN_EEPROM_START_ADDRESS + 1);
-
-    // Validate that calibration values are within the accepted range
-    if(calibration7Inch > CALIBRATION_VALUE_MAX) calibration7Inch = 0;
-    if(calibration10Inch > CALIBRATION_VALUE_MAX) calibration10Inch = 0;
-    if(calibration12Inch > CALIBRATION_VALUE_MAX) calibration12Inch = 0;
-  }
-}
-
-// This will update all numbers that have changed
-void updateCalibrationEEPROMValues(uint16_t old7In, uint16_t old10In, uint16_t old12In) {
-  // We only try to write each value to the EEPROM if it has been changed.
-  if(old7In != calibration7Inch) {
-    EEPROM.write(CALIBRATION_7IN_EEPROM_START_ADDRESS, calibration7Inch >> 8);
-    EEPROM.write(CALIBRATION_7IN_EEPROM_START_ADDRESS + 1, calibration7Inch  & 0xFF);
-  }
-
-  if(old10In != calibration10Inch) {
-    EEPROM.write(CALIBRATION_10IN_EEPROM_START_ADDRESS, calibration10Inch >> 8);
-    EEPROM.write(CALIBRATION_10IN_EEPROM_START_ADDRESS + 1, calibration10Inch  & 0xFF);
-  }
-
-  if(old12In != calibration12Inch) {
-    EEPROM.write(CALIBRATION_12IN_EEPROM_START_ADDRESS, calibration12Inch >> 8);
-    EEPROM.write(CALIBRATION_12IN_EEPROM_START_ADDRESS + 1, calibration12Inch  & 0xFF);
-  }
-
-  // If any values were changed, blink the play LED once to signify that the data was saved
-  if(old12In != calibration12Inch || old10In != calibration10Inch || old7In != calibration7Inch) {
-    digitalWrite(ArduinoPin::MovementStatusLed, HIGH);
-    delay(250);
-    digitalWrite(ArduinoPin::MovementStatusLed, LOW);
-  }
-}
-
 // Each time the interrupt calls this function, the current milliseconds are polled, and compared against the last polling
 // to calculate the speed the turntable is spinning on each rotation. This calculation is always occurring, even if the speed
 // is not being displayed.
@@ -500,23 +281,17 @@ void calculateTurntableSpeed() {
 
 // This stops all movement and sets the turntable in an error state to prevent damage.
 // This will be called if a motor stall has been detected.
+// TODO: Re-implement error codes with LED flashes just like in the earliest revisions...
 void setErrorState(MovementResult movementResult) {
   digitalWrite(ArduinoPin::PauseStatusLed, HIGH);
   digitalWrite(ArduinoPin::MovementStatusLed, HIGH);
 
-  sevSeg.clear();
-  sevSeg.writeDigitNum(0, movementResult, false);
-  sevSeg.writeDisplay();
-
   // Wait for the user to press the Play/Home or Pause/Unpause buttons to break out of the error state
   while(!mux.readDigitalValue(MultiplexerInput::PlayHomeButton) && !mux.readDigitalValue(MultiplexerInput::PauseButton)) { delay(1); }
 
-  sevSeg.clear();
-  sevSeg.writeDisplay();
-
   // Clear all statuses. Even though technically the next routine should execute right away, there's that 1/10000 chance that the user can
   // release the button quickly enough to break out of the error state, but not yet execute the next command
-  digitalWrite(ArduinoPin::PauseStatusLed, HIGH);
-  digitalWrite(ArduinoPin::MovementStatusLed, HIGH);
+  digitalWrite(ArduinoPin::PauseStatusLed, LOW);
+  digitalWrite(ArduinoPin::MovementStatusLed, LOW);
   paused = false;
 }

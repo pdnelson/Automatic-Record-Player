@@ -9,9 +9,6 @@
     // The number of steps it takes for either stepper motor to make a full 360-degree rotation.
     #define STEPS_PER_REVOLUTION 2048
 
-    // The start address of the seven-segment display.
-    #define SEV_SEG_START_ADDRESS 0x70
-
 /********** CALIBRATION VALUES */
 
     // The "middle of the road" RPM that a stepper should move.
@@ -43,17 +40,6 @@
     // The amount of time since the last speed sensor interrupt before we consider the turntable "stopped"
     #define TURNTABLE_STOPPED_MS 2500
 
-/********** USER SETTING CALIBRATION VALUES */
-
-    #define CALIBRATION_HOLD_CHANGE_MS 200 // The interval between value updates
-    #define CALIBRATION_HOLD_DECREMENT_MS 20 // The number of MS removed from the overall change MS when the hold change interval is reached
-    #define CALIBRATION_HOLD_LOWEST_MS 20 // The lowest number that the hold change MS can go to before not being subtracted from anymore.
-    #define CALIBRATION_HOLD_CHANGE_INTERVAL 3 // The number of updates before the change MS decreases
-    #define CALIBRATION_DEBOUNCE_MS 100
-
-    // The maximum value that can be stored for the calibration.
-    #define CALIBRATION_VALUE_MAX 2500
-
 /********** TONEARM PICKUP CALIBRATION VALUES */
 
 #define TONEARM_PICKUP_DEBOUNCE_MS 20 // Debounce interval to help prevent the tonearm pickup sensor from misfiring.
@@ -64,15 +50,3 @@
 // that will work with the exact speed the turntable is spinning at.
 #define TONEARM_PICKUP_BASE_SPEED 45.5 // The base speed the turntable was spinning at when the base interval was found through trial and error.
 #define TONEARM_PICKUP_BASE_INTERVAL 700 // The base interval that the pickup sensor must change when the turntable is spinning at TONEARM_PICKUP_BASE_SPEED RPM
-
-/********** USER-SET CALIBRATION VALUE DEFAULTS */
-
-    #define CALIBRATION_7IN_DEFAULT 7
-    #define CALIBRATION_10IN_DEFAULT 10
-    #define CALIBRATION_12IN_DEFAULT 12
-
-/********** EEPROM ADDRESSES */
-
-    #define CALIBRATION_7IN_EEPROM_START_ADDRESS 0
-    #define CALIBRATION_10IN_EEPROM_START_ADDRESS 2
-    #define CALIBRATION_12IN_EEPROM_START_ADDRESS 4

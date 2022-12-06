@@ -54,9 +54,7 @@ enum ArduinoPin : uint8_t {
     // to read a value from.
     MuxSelectorC = 12,
 
-    // A solenoid that is used to brake the turntable. Because the platter is made of solid aluminum, it maintains a lot of momentum even after the motor
-    // stops spinning, so this brake will slow it down much more quickly.
-    TurntableBrake = 13,
+    UNUSED_ARDUINO_13 = 13,
 
     // The "home" or "play" position optical sensor, depending on which direction the tonearm is moving. If the tonearm is moving
     // counter-clockwise, this sensor acts as the "home" sensor, whereas if it is moving clockwise, it acts as the play sensor.
@@ -73,13 +71,9 @@ enum ArduinoPin : uint8_t {
     // trigger the homing routine.
     PickupEncoderB = A3,
 
-    // Currently in use by the Adafruit 7-segment display. This display deals with displaying the current speed of the turntable,
-    // as well as calibration values when the calibration button is being held.
-    Reserved7SegSda = A4,
+    UNUSED_ARDUINO_A4 = A4,
 
-    // Currently in use by the Adafruit 7-segment display. This display deals with displaying the current speed of the turntable,
-    // as well as calibration values when the calibration button is being held.
-    Reserved7SegScl = A5,
+    UNUSED_ARDUINO_A5 = A5,
 
     // Indicator light so we can tell what the turntable is currently doing. This pin will be set HIGH if the turntable
     // is currently executing the "home" or "play" routine.

@@ -17,24 +17,14 @@ enum MultiplexerInput : uint8_t {
     // Positioning sensor for the vertical tonearm movement. This is the upper sensor, indicating the "pause" vertical position of the tonearm.
     VerticalUpperLimit = 3,
 
-    // This, used together with RecordSizeSelector2, tells the software which record size it should be looking for.
-    // If this is HIGH while RecordSizeSelector2 is LOW, the software will use the 7" optical sensor.
-    // If both this and RecordSizeSelector2 are LOW, the software will use the 10" optical sensor.
-    RecordSizeSelector1 = 4,
+    UNUSED_MUX_4 = 4,
 
-    // This, used together with RecordSizeSelector1, tells the software which record size it should be looking for.
-    // If this is HIGH while RecordSizeSelector1 is LOW, the software will use the 12" optical sensor.
-    // If both this and RecordSizeSelector2 are LOW, the software will use the 10" optical sensor.
+    // This pin decides whether we are in automatic or manual mode. To know what each value does, see AutoManualSwitchPosition.h.
     AutoManualSwitch = 5,
 
-    // This is a button that the user can press that will display, numerically, the value of an analog potentiometer that corresponds with the current
-    // record size that is selected.
-    DisplayCalibrationValue = 6,
+    UNUSED_MUX_6 = 6,
     
-    // This is the switch used to determine whether the user turned on the turntable in automatic or manual mode.
-    // Automatic: The tonearm will return to "home" at the end of a record.
-    // Manual: The tonearm will not return to "home" at the end of a record. All buttons still have their same functionality in "automatic" mode.
-    RecordSizeSelector2 = 7
+    UNUSED_MUX_7 = 7
 };
 
 #endif
