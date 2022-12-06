@@ -32,20 +32,32 @@ class TonearmMovementController {
         // timeout - The number of steps that should be taken before an error occurs.
         // calibration - The number of steps that should be taken after the sensor is reached.
         // speed - The speed, in RPM, that the motor moving the tonearm should spin.
+        // DEPRECATED. To be removed in future version.
         MovementResult moveTonearmHorizontally(uint8_t destinationSensor, unsigned int timeout, int calibration, uint8_t speed);
-        
-        // Move the tonearm vertically until it reaches the destination limit switch.
-        // direction - The direction that the tonearm should be moving.
-        // timeout - The number of steps that should be taken before an error occurs.
-        // speed - The speed, in RPM, that the motor moving the tonearm should spin.
-        MovementResult moveTonearmVertically(VerticalMovementDirection direction, uint8_t speed);
         
         // Move the tonearm horizontally by the given step count. This is a blind movement, meaning there is no check 
         // at the end that the tonearm successfully moved all steps.
         // steps - The number of steps the tonearm should move.
         // speed - The speed, in RPM, that the motor moving the tonearm should spin.
         // direction - The direction the tonearm should be moving.
+        // DEPRECATED. To be removed in future version.
         void horizontalRelativeMove(uint16_t steps, uint8_t speed, HorizontalMovementDirection direction);
+
+        // Move the tonearm up until it bumps the upper limit.
+        MovementResult moveUp(uint8_t speed);
+
+        // Move the tonearm down until it bumps the lower limit.
+        MovementResult moveDown(uint8_t speed);
+
+        // Move clockwise until we bump into the record edge, then stop. 
+        // This method expects that the tonearm is horizontally homed and in the DOWN vertical position. If it is not, 
+        // then it will return an error, because this situation should not occur.
+        MovementResult seekRecordEdge();
+
+        // Move counterclockwise until we bump into the home mount.
+        // If we bump into something before the home sensor is tripped, throw an error, because we aren't home!
+        // This method expects the tonearm to already be in the UP vertical position. If it isn't, it will return an error.
+        MovementResult horizontalHome();
 
         // Set the value for how long it is expected that the clutch will take to engage or disengage from the horizontal gears.
         void setClutchEngagementMs(uint16_t ms);
@@ -60,7 +72,12 @@ class TonearmMovementController {
         // Set the max number of steps that the tonearm can travel vertically before being considered in error.
         void setVerticalTimeout(unsigned int timeout);
 
-    private:        
+    private:       
+        // Move the tonearm vertically until it reaches the destination limit switch.
+        // direction - The direction that the tonearm should be moving.
+        // speed - The speed, in RPM, that the motor moving the tonearm should spin.
+        MovementResult verticalMove(VerticalMovementDirection direction, uint8_t speed);
+
         // Set all pins that the motor is using to LOW, as well as the motor demultiplexer.
         void releaseCurrentFromMotors();
 

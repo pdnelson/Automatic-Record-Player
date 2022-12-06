@@ -26,7 +26,24 @@ TonearmMovementController::TonearmMovementController(
     this->verticalTimeout = 0;
 }
 
+MovementResult TonearmMovementController::moveUp(uint8_t speed) {
+  this->verticalMove(VerticalMovementDirection::Up, speed);
+}
+
+MovementResult TonearmMovementController::moveDown(uint8_t speed) {
+  this->verticalMove(VerticalMovementDirection::Down, speed);
+}
+
+MovementResult TonearmMovementController::seekRecordEdge() {
+  // TODO: Implement
+}
+
+MovementResult TonearmMovementController::horizontalHome() {
+  // TODO: Implement
+}
+
 // Moves the tonearm to a specified destination.
+// TODO: Delete this method when we are ready to replace it with seekRecordEdge and horizontalHome
 MovementResult TonearmMovementController::moveTonearmHorizontally(uint8_t destinationSensor, unsigned int timeout, int calibration, uint8_t speed) {
     // Select horizontal movement.
     digitalWrite(this->motorSelectPin, MotorAxis::Horizontal);
@@ -68,7 +85,7 @@ MovementResult TonearmMovementController::moveTonearmHorizontally(uint8_t destin
     return MovementResult::Success;
 }
 
-MovementResult TonearmMovementController::moveTonearmVertically(VerticalMovementDirection direction, uint8_t speed) {
+MovementResult TonearmMovementController::verticalMove(VerticalMovementDirection direction, uint8_t speed) {
   // Determine the destination sensor based on the direction passed.
   uint8_t destinationSensor = (direction == VerticalMovementDirection::Up) ? this->verticalUpperLimit : this->verticalLowerLimit;
 
