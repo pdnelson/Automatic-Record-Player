@@ -57,9 +57,11 @@ enum ArduinoPin : uint8_t {
     // Pin to enable or disable the turntable motor, meaning that once the turntable crosses the home sensor, and this pin is high, it is free to move.
     TurntableMotorEnable = 13,
 
-    UNUSED_ARDUINO_A0 = A0,
+    // Will be true if the tonearm lift is not touching the tonearm. 
+    TonearmLiftFloating = A0,
 
-    UNUSED_ARDUINO_A1 = A1,
+    // When this is high and auto-return is triggered, instead of homing, it will go to the beginning of the record again.
+    RepeatAfterAutoReturn = A1,
 
     // The "home" or "play" position optical sensor, depending on which direction the tonearm is moving. If the tonearm is moving
     // counter-clockwise, this sensor acts as the "home" sensor, whereas if it is moving clockwise, it acts as the play sensor.

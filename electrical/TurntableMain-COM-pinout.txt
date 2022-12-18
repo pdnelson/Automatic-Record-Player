@@ -1,6 +1,6 @@
 1 - NC
 2 - NC
-3 - NC
+3 - Output - Repeat button status
 4 - Output - GND
 5 - Output - Speed switch status
 6 - Output - Automatic switch status
