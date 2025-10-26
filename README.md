@@ -1,4 +1,6 @@
 # Automatic Turntable Introduction
+This project is currently under construction separately from this repository. This repository is now obsolete, and will be left in a non-functional state.
+
 This is a fully automatic turntable that plays 7", 10" or 12" records! The automatic capabilities are powered by an Arduino Nano Every, 2 stepper motors, and a bunch of sensors.
 Some notes on this turntable include (see "Features, User Inputs and Routines" section for more details):
 - Stereo RCA outputs for a receiver
@@ -16,9 +18,7 @@ Some notes on this turntable include (see "Features, User Inputs and Routines" s
 
 # Demo Videos
 
-A prototype can be seen [here](https://www.youtube.com/watch?v=AN1vcnQAMdQ). Please note that this prototype is outdated, and is NOT a comprehensive/full representation of all the features. All features present on this page are present on that prototype, with the exception of skate/anti-skate adjustment.
-
-A direct audio capture demo can be seen [here](https://youtu.be/0yNxp464KpQ). Please note that "humming" heard in the background is from the stereo receiver I recorded from, and not the record player. Pitch imperfections are also present in this recording for the following reasons: The grooves of this record were pressed slightly off-center, and the pulleys driving the turntable are 3D-printed, so there is a lot of wow/flutter. I plan to address this issue by replacing the 3D-printed pulley with one turned on out of brass on a lathe, and turning the turntable itself out of wood on a lathe.
+I went over some information of this version of the turntable [in this video](https://www.youtube.com/watch?v=k4UXI1rkMYs). Further updates will be referenced on that channel.
 
 # Features, User Inputs and Routines
 The turntable has several inputs the user can use. Most of these functions must be initiated by the user by either pressing a button or flipping a switch, though homing can also be done automatically, which will be explained in more detail later on. Routine interrupt is currently not planned. This means that while one routine is running, none of the others can be executed for the duration of the currently-running routine.
